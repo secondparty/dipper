@@ -59,12 +59,12 @@ $parsed   = Dipper::parse($raw_yaml);
 
 ### Sample Results
 
-In local tests of parsing about 500 lines of YAML, Dipper parses through it in less than half of the time of what SPYC and Symfony are doing:
+In local tests of parsing about 500 lines of YAML, Dipper parses through it in less than half of the time of what SPYC and Symfony are doing. Below are average render times over 250 iterations of each script parsing the same file.
 
 ```
-Dipper:    9.018ms
-SPYC:     22.336ms
-Symfony:  25.732ms
+SPYC:     21.541ms   - the default Statamic parser
+Symfony:  23.899ms
+Dipper:    8.696ms
 ``` 
 
 And while yes, these are *milliseconds*, every little bit counts.

@@ -88,7 +88,7 @@ class Dipper
 			// remove double-quoted strings
 			if (strpos($structure, '"') !== false) {
 				$structure = preg_replace_callback('/".*?(?<!\\\)"/ms', function($item) {
-					$key = '__rpl-' . Dipper::$i++ . '__';
+					$key = '__r@-' . Dipper::$i++ . '__';
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
 					return $key;
 				}, $structure);
@@ -97,7 +97,7 @@ class Dipper
 			// remove single-quoted strings
 			if (strpos($structure, '\'') !== false) {
 				$structure = preg_replace_callback('/\'.*?(?<!\\\)\'/ms', function($item) {
-					$key = '__rpl-' . Dipper::$i++ . '__';
+					$key = '__r@-' . Dipper::$i++ . '__';
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
 					return $key;
 				}, $structure);
@@ -105,7 +105,13 @@ class Dipper
 
 			// remove comments
 			if (strpos($structure, '#') !== false) {
-				$structure = preg_replace('/#.*?$/m', '', $structure);
+				$colon = strpos($structure, ':');
+				if ($colon !== false) {
+					$first_value_char = substr(trim(substr($structure, $colon + 1)), 0, 1);
+					if ($first_value_char !== '>' && $first_value_char !== '|') {
+						$structure = preg_replace('/#.*?$/m', '', $structure);
+					}
+				}
 			}
 
 			// add to $output
@@ -127,7 +133,9 @@ class Dipper
 	private static function parseStructure($structure)
 	{
 		// separate key from value
-		list($key, $value) = self::breakIntoKeyValue($structure);
+		$out = self::breakIntoKeyValue($structure);
+		$key = $out[0];    // this is slightly faster
+		$value = $out[1];  // than using list() out of method
 
 		// transformations that are used more than once
 		$first_two        = substr($value, 0, 2);
@@ -142,8 +150,8 @@ class Dipper
 		// what is this?
 		if ($value === '') {
 			// it's a nothing!
-			$new_value = '';
-		} elseif ($first_two === '__' && substr($value, 0, 6) === '__rpl-') {
+			$new_value = null;
+		} elseif ($first_two === '__' && substr($value, 0, 5) === '__r@-') {
 			// it's a replaceable value!
 			$new_value = self::unreplace($value);
 		} elseif (isset(self::$booleans[$trimmed_lower])) {
@@ -154,17 +162,6 @@ class Dipper
 			$new_value = explode(',', trim($value, '[]'));
 			foreach ($new_value as &$line) {
 				$line = trim($line);
-			}
-		} elseif (is_numeric($trimmed_lower)) {
-			// it's a number!
-			if (strstr($value, '.') !== false) {
-				$new_value = (float) $value;
-			} elseif ($first_two === '0x') {
-				$new_value = hexdec($value);
-			} elseif ($value[0] === '0') {
-				$new_value = octdec($value);
-			} else {
-				$new_value = (int) $value;
 			}
 		} elseif ($first_character === '|') {
 			// it's a literal scalar!
@@ -191,9 +188,20 @@ class Dipper
 			// it's a map! which in this system, means it's a structure
 			$structures  = self::breakIntoStructures(self::outdent($value));
 			$new_value   = self::parseStructures($structures);
+		} elseif (is_numeric($trimmed_lower)) {
+			// it's a number!
+			if (strstr($value, '.') !== false) {
+				$new_value = (float) $value;
+			} elseif ($first_two === '0x') {
+				$new_value = hexdec($value);
+			} elseif ($value[0] === '0') {
+				$new_value = octdec($value);
+			} else {
+				$new_value = (int) $value;
+			}
 		} else {
 			// it is what it is, a string probably!
-			$new_value = self::unreplace($value);
+			$new_value = rtrim(self::unreplace($value));
 		}
 
 		if (empty($key)) {
@@ -214,7 +222,7 @@ class Dipper
 	{
 		$colon = strpos($text, ':');
 
-		if ($colon === false) {
+		if (empty($colon)) {
 			return array(null, self::outdent($text));
 		}
 
@@ -233,7 +241,7 @@ class Dipper
 	private static function setIndent($yaml)
 	{
 		self::$indent = 0;
-		if (preg_match('/^(\s+)\S/m', $yaml, $matches)) {
+		if (preg_match('/^( +)\S/m', $yaml, $matches)) {
 			self::$indent = strlen($matches[1]);
 		}
 
@@ -255,7 +263,7 @@ class Dipper
 		$lines = explode("\n", $yaml);
 		foreach ($lines as $line) {
 			$trimmed = ltrim($line);
-			if (substr($trimmed, 0, 1) !== '#' && strpos($trimmed, '---') !== 0) {
+			if (substr($line, 0, 1) !== '#' && strpos($trimmed, '---') !== 0) {
 				$first_pass .= "\n" . $line;
 			}
 		}
@@ -303,7 +311,7 @@ class Dipper
 	 */
 	private static function unreplace($text)
 	{
-		if (!isset(self::$replacements[$text]) || strpos($text, '__rpl-') === false) {
+		if (!isset(self::$replacements[$text]) || strpos($text, '__r@-') === false) {
 			return $text;
 		}
 
@@ -324,7 +332,7 @@ class Dipper
 		
 		foreach ($lines as $line) {
 			$first_char = substr($line, 0, 1);
-			if ($first_char !== false && $first_char !== ' ') {
+			if ($first_char !== false && $first_char !== ' ' && $first_char !== "\n") {
 				// not something that can be outdent-ed
 				return $value;
 			}
