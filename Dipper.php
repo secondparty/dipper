@@ -3,34 +3,34 @@
  * Dipper
  * A demi-YAML parser by Statamic.
  * View full documentation at http://github.com/statamic/dipper
- * 
+ *
  * Copyright (c) 2014, Statamic
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice, 
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
- * 
- * 2. Redistributions in binary form must reproduce the above copyright notice, 
- *    this list of conditions and the following disclaimer in the documentation 
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
- * 3. Neither the name of the copyright holder nor the names of its contributors 
- *    may be used to endorse or promote products derived from this software 
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 namespace Statamic\Dipper;
@@ -39,33 +39,39 @@ class Dipper
 {
     /**
      * A list of replacements extracts from the raw data string
-     * @private array
+     * @public array
      */
     public static $replacements = array();
+
+    /**
+     * Replacement types
+     * @public array
+     */
+    public static $replacement_types = array();
 
     /**
      * The size of the indent (in spaces) being used
      * @private int
      */
-    public static $indent = 0;
+    private static $indent = 0;
 
     /**
      * A string representation of one empty indent (based on $this->indent size)
      * @private null
      */
-    public static $empty_indent = null;
+    private static $empty_indent = null;
 
     /**
      * Class-wide iterator used for replacements
      * @private int
      */
-    public static $i = 0;
+    private static $i = 0;
 
     /**
      * List of strings that register as booleans/null values and their mappings
      * @private array
      */
-    public static $booleans = array(
+    private static $booleans = array(
         'true'  => true,
         'yes'   => true,
         'false' => false,
@@ -112,14 +118,15 @@ class Dipper
      */
     private static function parseStructures($structures)
     {
-        $output  = array();
+        $output = array();
 
         // loop through each structure, escaping quoted content and comments, then parsing it
         foreach ($structures as $structure) {
             // remove double-quoted strings
             if (strpos($structure, '"') !== false) {
-                $structure = preg_replace_callback('/".*?(?<!\\\)"/ms', function($item) {
+                $structure = preg_replace_callback('/".*?(?<!\\\)"/m', function($item) {
                     $key = '__r@-' . Dipper::$i++ . '__';
+                    Dipper::$replacement_types[$key] = '"';
                     Dipper::$replacements[$key] = substr($item[0], 1, -1);
                     return $key;
                 }, $structure);
@@ -127,8 +134,9 @@ class Dipper
 
             // remove single-quoted strings
             if (strpos($structure, '\'') !== false) {
-                $structure = preg_replace_callback('/\'.*?(?<!\\\)\'/ms', function($item) {
+                $structure = preg_replace_callback('/\'.*?(?<!\\\)\'/m', function($item) {
                     $key = '__r@-' . Dipper::$i++ . '__';
+                    Dipper::$replacement_types[$key] = '\'';
                     Dipper::$replacements[$key] = substr($item[0], 1, -1);
                     return $key;
                 }, $structure);
@@ -192,14 +200,14 @@ class Dipper
             // it's a short-hand list!
             $new_value = explode(',', trim($value, '[]'));
             foreach ($new_value as &$line) {
-                $line = trim($line);
+                $line = self::unreplaceAll(trim($line));
             }
         } elseif ($first_character === '|') {
             // it's a literal scalar!
-            $new_value = substr($value, strpos($value, "\n") + 1);
+            $new_value = self::unreplaceAll(substr($value, strpos($value, "\n") + 1), true);
         } elseif ($first_character === '>') {
             // it's a fold-able scalar!
-            $new_value = preg_replace('/^(\S[^\n]*)\n(?=\S)/m', '$1 ', substr($value, strpos($value, "\n") + 1));
+            $new_value = self::unreplaceAll(preg_replace('/^(\S[^\n]*)\n(?=\S)/m', '$1 ', substr($value, strpos($value, "\n") + 1)));
         } elseif ($first_two === '- ' || $first_two === "-\n") {
             // it's a standard list!
             $items = self::breakIntoStructures($value);
@@ -232,7 +240,7 @@ class Dipper
             }
         } else {
             // it is what it is, a string probably!
-            $new_value = rtrim(self::unreplace($value));
+            $new_value = rtrim(self::unreplaceAll($value));
         }
 
         if (empty($key)) {
@@ -276,6 +284,7 @@ class Dipper
             self::$indent = strlen($matches[1]);
         }
 
+        // create an empty indent for later
         self::$empty_indent = str_repeat(' ', self::$indent);
     }
 
@@ -340,13 +349,39 @@ class Dipper
      * @param string  $text  Text to consider for unreplacing
      * @return string
      */
-    private static function unreplace($text)
+    public static function unreplace($text)
     {
+        // check that there's an unreplace-able string here
         if (!isset(self::$replacements[$text]) || strpos($text, '__r@-') === false) {
             return $text;
         }
 
         return self::$replacements[$text];
+    }
+
+
+    /**
+     * Converts multiple replaced strings with the original values
+     *
+     * @param string  $text  Text to consider for unreplacing
+     * @param bool  $include_type  Should we include the quotes with it?
+     * @return string
+     */
+    private static function unreplaceAll($text, $include_type=false)
+    {
+        // check that there's an unreplace-able string here
+        if (!is_string($text) || strpos($text, '__r@-') === false) {
+            return $text;
+        }
+
+        // unreplace all
+        return preg_replace_callback('/__r@-\d+__/', function($matches) use ($include_type) {
+            if ($include_type) {
+                return Dipper::$replacement_types[$matches[0]] . Dipper::unreplace($matches[0]) . Dipper::$replacement_types[$matches[0]];
+            }
+
+            return Dipper::unreplace($matches[0]);
+        }, $text);
     }
 
 
