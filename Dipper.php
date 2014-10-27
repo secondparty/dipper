@@ -53,25 +53,25 @@ class Dipper
      * The size of the indent (in spaces) being used
      * @private int
      */
-    private static $indent = 0;
+    public static $indent = 0;
 
     /**
      * A string representation of one empty indent (based on $this->indent size)
      * @private null
      */
-    private static $empty_indent = null;
+    public static $empty_indent = null;
 
     /**
      * Class-wide iterator used for replacements
      * @private int
      */
-    private static $i = 0;
+    public static $i = 0;
 
     /**
      * List of strings that register as booleans/null values and their mappings
      * @private array
      */
-    private static $booleans = array(
+    public static $booleans = array(
         'true'  => true,
         'yes'   => true,
         'false' => false,
