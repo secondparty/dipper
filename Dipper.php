@@ -102,7 +102,7 @@ class Dipper
         $structures = self::breakIntoStructures($yaml);
 
         // parse structures
-        return self::parseStructures($structures);
+        return self::parseStructures($structures, true);
     }
 
 
@@ -113,10 +113,11 @@ class Dipper
     /**
      * Loops through the given structures, parsing each individually
      *
-     * @param array  $structures
+     * @param array  $structures  List of structures that need parsing
+     * @param boolean  $is_root  Is this the top-most structure?
      * @return array
      */
-    private static function parseStructures($structures)
+    private static function parseStructures($structures, $is_root=false)
     {
         $output = array();
 
@@ -155,7 +156,12 @@ class Dipper
 
             // add to $output
             if ($result = self::parseStructure($structure)) {
-                $output[$result[0]] = $result[1];
+                if ($is_root && empty($result[1]) && !empty($result[0])) {
+                    // handles cases where the outer-most element is just a list
+                    $output[] = $result[0];
+                } else {
+                    $output[$result[0]] = $result[1];
+                }
             }
         }
 
