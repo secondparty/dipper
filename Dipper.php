@@ -92,6 +92,11 @@ class Dipper
 	 */
 	public static function parse($yaml)
 	{
+		// reset replacements since these don't apply from parse to parse
+		self::$replacements = array();
+		self::$replacement_types = array();
+		self::$i = 0;
+
 		// remove comments
 		$yaml = self::removeComments($yaml);
 
