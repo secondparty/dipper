@@ -73,9 +73,7 @@ class Dipper
 	 */
 	public static $booleans = array(
 		'true'  => true,
-		'yes'   => true,
 		'false' => false,
-		'no'    => false,
 		'~'     => null,
 		'null'  => null
 	);
