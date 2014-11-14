@@ -64,7 +64,7 @@ In local tests of parsing about 500 lines of YAML, Dipper parses through it in l
 ```
 SPYC:     ~22ms   - the default Statamic parser
 Symfony:  ~24ms
-Dipper:    ~9ms
+Dipper:   ~10ms
 ``` 
 
 And while yes, these are *milliseconds* we're talking about, every little bit counts.
