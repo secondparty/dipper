@@ -202,7 +202,7 @@ class Dipper
 		} elseif (isset(self::$booleans[$trimmed_lower])) {
 			// it's a boolean!
 			$new_value = self::$booleans[$trimmed_lower];
-		} elseif ($first_character === '[' && substr($value, -1) === ']') {
+		} elseif ($first_character === '[' && substr($trimmed_lower, -1) === ']') {
 			// it's a short-hand list!
 			$new_value = explode(',', trim($value, '[]'));
 			foreach ($new_value as &$line) {
@@ -239,7 +239,7 @@ class Dipper
 				$new_value = (float) $value;
 			} elseif ($first_two === '0x') {
 				$new_value = hexdec($value);
-			} elseif ($value[0] === '0') {
+			} elseif ($first_character === '0') {
 				$new_value = octdec($value);
 			} else {
 				$new_value = (int) $value;
@@ -310,7 +310,7 @@ class Dipper
 		foreach ($lines as $line) {
 			$trimmed = ltrim($line);
 			if (substr($line, 0, 1) !== '#' && strpos($trimmed, '---') !== 0) {
-				$first_pass .= "\n" . $line;
+				$first_pass = $first_pass . "\n" . $line;
 			}
 		}
 
@@ -338,7 +338,7 @@ class Dipper
 
 				$chunk = $line;
 			} else {
-				$chunk .= "\n" . $line;
+				$chunk = $chunk . "\n" . $line;
 			}
 		}
 
@@ -410,13 +410,13 @@ class Dipper
 			}
 
 			if (empty($first_char)) {
-				$out .= "\n" . self::$empty_indent;
+				$out = $out . "\n" . self::$empty_indent;
 			} elseif (substr($line, 0, self::$indent) === self::$empty_indent) {
 				// remove one level of indenting
-				$out .= "\n" . substr($line, self::$indent);
+				$out = $out . "\n" . substr($line, self::$indent);
 			} else {
 				// remove all left-hand space
-				$out .= ltrim($line, ' ');
+				$out = $out . ltrim($line, ' ');
 			}
 		}
 
