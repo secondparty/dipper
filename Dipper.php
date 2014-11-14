@@ -177,8 +177,6 @@ class Dipper
 	 */
 	private static function parseStructure($structure)
 	{
-
-
 		// separate key from value
 		$out = self::breakIntoKeyValue($structure);
 		$key = $out[0];    // this is slightly faster
