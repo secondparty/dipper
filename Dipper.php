@@ -202,7 +202,7 @@ class Dipper
 		} elseif ($first_two === '__' && substr($value, 0, 5) === '__r@-') {
 			// it's a replaceable value!
 			$new_value = self::unreplace($value);
-		} elseif (isset(self::$booleans[$trimmed_lower])) {
+		} elseif (array_key_exists($trimmed_lower, self::$booleans)) {
 			// it's a boolean!
 			$new_value = self::$booleans[$trimmed_lower];
 		} elseif ($first_character === '[' && substr($trimmed_lower, -1) === ']') {
