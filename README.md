@@ -1,6 +1,6 @@
 # Dipper
 
-Dipper parses YAML for a subset of the v1.0 spec.
+Dipper parses YAML for a subset of the v1.0 and v1.2 specs.
 We're calling it a Demi-YAML Parser (DYP… which could be pronounced "dip…" thus, Dipper — naming things is hard).
 
 
@@ -114,13 +114,16 @@ folding_scalar: >
 All of the following will be parsed as numbers.
 
 ```yaml
-integer: 42           # becomes an integer 
-float: -12.12         # becomes a float
-octal: 0755           # becomes an integer, converted from octal
-hex: 0xff             # becomes an integer, converted from hexadecimal
-infinity: .inf        # becomes a float, the PHP constant for infinity
-infinity: -.inf       # becomes a float, the PHP constant for negative infinity
-not_a_number: .NaN    # becomes a float, the PHP constant for not-a-number
+integer: 42            # becomes an integer 
+float: -12.12          # becomes a float
+octal: 0755            # becomes an integer, converted from octal
+hex: 0xff              # becomes an integer, converted from hexadecimal
+infinite: (inf)        # YAML 1.0-style, becomes a float, the PHP constant for infinity
+minus_inf: (-inf)      # YAML 1.0-style, becomes a float, the PHP constant for negative infinity
+also_nan: (NaN)        # YAML 1.0-style, becomes a float, the PHP constant for not-a-number
+also_infinity: .inf    # YAML 1.2-style, becomes a float, the PHP constant for infinity
+also_minus_inf: -.inf  # YAML 1.2-style, becomes a float, the PHP constant for negative infinity
+not_a_number: .NaN     # YAML 1.2-style, becomes a float, the PHP constant for not-a-number
 ```
 
 ### Booleans & Nulls
@@ -128,10 +131,10 @@ not_a_number: .NaN    # becomes a float, the PHP constant for not-a-number
 All of the following will be converted when not quoted.
 
 ```yaml
-bool_true: true       # becomes true (as a boolean)
-bool_false: false     # becomes false (as a boolean)
-null_value: null      # becomes a PHP null value
-shorthand_null: ~     # becomes a PHP null value
+bool_true: true        # becomes true (as a boolean)
+bool_false: false      # becomes false (as a boolean)
+null_value: null       # becomes a PHP null value
+shorthand_null: ~      # becomes a PHP null value
 ```
 
 ### Lists
@@ -149,7 +152,7 @@ shorthand_list: [ first item, second item, third item ]
 
 ### Maps
 
-Maps (or "named lists" as we sometimes call them).
+Dipper converts maps (or "named lists" as we sometimes call them).
 
 ```yaml
 map:
@@ -157,7 +160,7 @@ map:
   two: second
 ```
 
-#### Combinations of the Above
+### Combinations of the Above
 
 You can, of course, mix and match the above values into complex structures and Dipper should handle them just fine.
 
