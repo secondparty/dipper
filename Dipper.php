@@ -426,13 +426,12 @@ class Dipper
 		$out    = '';
 
 		foreach ($lines as $line) {
-			$first_char = substr($line, 0, 1);
-			if ($first_char !== false && $first_char !== ' ' && $first_char !== "\n") {
+			if (isset($line[0]) && $line[0] !== ' ' && $line[0] !== "\n") {
 				// not something that can be outdent-ed
 				return $value;
 			}
 
-			if (empty($first_char)) {
+			if (!isset($line[0])) {
 				$out = $out . "\n" . self::$empty_indent;
 			} elseif (substr($line, 0, self::$indent) === self::$empty_indent) {
 				// remove one level of indenting
