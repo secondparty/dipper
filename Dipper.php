@@ -237,11 +237,11 @@ class Dipper
 			// it's a map! which in this system, means it's a structure
 			$structures  = self::breakIntoStructures(self::outdent($value));
 			$new_value   = self::parseStructures($structures);
-		} elseif (is_numeric($trimmed_lower)) {
+		} elseif (is_numeric($trimmed_lower) || $first_two === '0o') {
 			// it's a number!
 			if (strpos($value, '.') !== false) {
 				// float
-				$new_value = (float) $value;
+				$new_value = (float)$value;
 			} elseif ($first_two === '0x') {
 				// hex
 				$new_value = hexdec($value);
@@ -250,8 +250,11 @@ class Dipper
 				$new_value = octdec($value);
 			} else {
 				// plain-old integer
-				$new_value = (int) $value;
+				$new_value = (int)$value;
 			}
+		} elseif ($first_two === '0o') {
+			// it's a yaml 1.2 octal
+			$new_value = octdec(substr($value, 2));
 		} elseif ($trimmed_lower === '.inf' || $trimmed_lower === '(inf)') {
 			// it's infinite!
 			$new_value = INF;
