@@ -309,7 +309,7 @@ class Dipper
 		$first_pass = '';
 
 		// slightly faster than array_map	
-		$lines = explode("\n", $yaml);
+		$lines = explode(PHP_EOL, $yaml);
 		foreach ($lines as $line) {
 			$trimmed = ltrim($line);
 			if (substr($line, 0, 1) !== '#' && strpos($trimmed, '---') !== 0) {
