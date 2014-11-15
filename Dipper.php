@@ -181,17 +181,18 @@ class Dipper
 	private static function parseStructure($structure)
 	{
 		// separate key from value
-		$out = self::breakIntoKeyValue($structure);
-		$key = $out[0];    // this is slightly faster
-		$value = $out[1];  // than using list() out of method
+		$out    = self::breakIntoKeyValue($structure);
+		$key    = $out[0];  // this is slightly faster...
+		$value  = $out[1];  // ...than using list() out of the method
 
 		// transformations that are used more than once
 		$first_two        = substr($value, 0, 2);
 		$first_character  = $first_two[0];
-		$trimmed_lower    = trim(strtolower($value));
+		$trimmed_value    = trim($value);
+		$trimmed_lower    = strtolower($trimmed_value);
 
 		// this is empty, abort
-		if ($key === null && empty($value)) {
+		if (!isset($key) && empty($value)) {
 			return null;
 		}
 
@@ -238,23 +239,38 @@ class Dipper
 			$new_value   = self::parseStructures($structures);
 		} elseif (is_numeric($trimmed_lower)) {
 			// it's a number!
-			if (strstr($value, '.') !== false) {
+			if (strpos($value, '.') !== false) {
+				// float
 				$new_value = (float) $value;
 			} elseif ($first_two === '0x') {
+				// hex
 				$new_value = hexdec($value);
 			} elseif ($first_character === '0') {
+				// octal
 				$new_value = octdec($value);
 			} else {
+				// plain-old integer
 				$new_value = (int) $value;
 			}
+		} elseif ($trimmed_lower === '.inf') {
+			// it's infinite!
+			$new_value = INF;
+		} elseif ($trimmed_lower === '-.inf') {
+			// it's negatively infinite!
+			$new_value = -INF;
+		} elseif ($trimmed_value === '.NaN') {
+			// it's specifically not a number!
+			$new_value = NAN;
 		} else {
 			// it is what it is, a string probably!
 			$new_value = rtrim(self::unreplaceAll($value));
 		}
 
 		if (empty($key)) {
+			// no key is set, so this is probably a value-parsing end-point
 			return $new_value;
 		} else {
+			// there's a key, so this is probably a structure-parsing end-point
 			return array(trim(self::unreplace($key)), $new_value);
 		}
 	}
@@ -386,6 +402,7 @@ class Dipper
 		// unreplace all
 		return preg_replace_callback('/__r@-\d+__/', function($matches) use ($include_type) {
 			if ($include_type) {
+				// we want to add in the same quotes (single or double) that this originally came with
 				return self::$replacement_types[$matches[0]] . self::unreplace($matches[0]) . self::$replacement_types[$matches[0]];
 			}
 
@@ -402,8 +419,8 @@ class Dipper
 	 */
 	private static function outdent($value)
 	{
-		$lines = explode("\n", $value);
-		$out = '';
+		$lines  = explode("\n", $value);
+		$out    = '';
 
 		foreach ($lines as $line) {
 			$first_char = substr($line, 0, 1);
@@ -423,6 +440,7 @@ class Dipper
 			}
 		}
 
+		return ltrim($out);
 		return ltrim($out);
 	}
 }
