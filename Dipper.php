@@ -252,13 +252,13 @@ class Dipper
 				// plain-old integer
 				$new_value = (int) $value;
 			}
-		} elseif ($trimmed_lower === '.inf') {
+		} elseif ($trimmed_lower === '.inf' || $trimmed_lower === '(inf)') {
 			// it's infinite!
 			$new_value = INF;
-		} elseif ($trimmed_lower === '-.inf') {
+		} elseif ($trimmed_lower === '-.inf' || $trimmed_lower === '(-inf)') {
 			// it's negatively infinite!
 			$new_value = -INF;
-		} elseif ($trimmed_value === '.NaN') {
+		} elseif ($trimmed_value === '.NaN' || $trimmed_lower === '(NaN)') {
 			// it's specifically not a number!
 			$new_value = NAN;
 		} else {
