@@ -95,8 +95,8 @@ class Dipper
 		self::$replacement_types = array();
 		self::$i = 0;
 
-		// remove comments
-		$yaml = self::removeComments($yaml);
+		// prepare the YAML by removing comments, standardizing line-endings
+		$yaml = self::prepare($yaml);
 
 		// get indent
 		self::setIndent($yaml);
@@ -318,12 +318,12 @@ class Dipper
 
 
 	/**
-	 * Removes any full-line comments and document separators
+	 * Removes any full-line comments and document separators, standardize line-endings
 	 *
 	 * @param string  $yaml  YAML string to parse
 	 * @return string
 	 */
-	private static function removeComments($yaml)
+	private static function prepare($yaml)
 	{
 		$first_pass = '';
 
@@ -443,7 +443,6 @@ class Dipper
 			}
 		}
 
-		return ltrim($out);
 		return ltrim($out);
 	}
 }
