@@ -53,16 +53,16 @@ class Dipper
 	 * The size of the indent (in spaces) being used
 	 * @private int
 	 */
-	public static $indent = 0;
+	public static $indent_size = 0;
 
 	/**
-	 * A string representation of one empty indent (based on $this->indent size)
+	 * A string representation of one empty indent (based on self::$indent_size)
 	 * @private null
 	 */
 	public static $empty_indent = null;
 
 	/**
-	 * Class-wide iterator used for replacements
+	 * Iterator used for replacements
 	 * @private int
 	 */
 	public static $i = 0;
@@ -307,13 +307,13 @@ class Dipper
 	 */
 	private static function setIndent($yaml)
 	{
-		self::$indent = 0;
+		self::$indent_size = 0;
 		if (preg_match('/^( +)\S/m', $yaml, $matches)) {
-			self::$indent = strlen($matches[1]);
+			self::$indent_size = strlen($matches[1]);
 		}
 
 		// create an empty indent for later
-		self::$empty_indent = str_repeat(' ', self::$indent);
+		self::$empty_indent = str_repeat(' ', self::$indent_size);
 	}
 
 
@@ -433,9 +433,9 @@ class Dipper
 
 			if (!isset($line[0])) {
 				$out = $out . "\n" . self::$empty_indent;
-			} elseif (substr($line, 0, self::$indent) === self::$empty_indent) {
+			} elseif (substr($line, 0, self::$indent_size) === self::$empty_indent) {
 				// remove one level of indenting
-				$out = $out . "\n" . substr($line, self::$indent);
+				$out = $out . "\n" . substr($line, self::$indent_size);
 			} else {
 				// remove all left-hand space
 				$out = $out . ltrim($line, ' ');
