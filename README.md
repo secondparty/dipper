@@ -116,14 +116,15 @@ All of the following will be parsed as numbers.
 ```yaml
 integer: 42            # becomes an integer 
 float: -12.12          # becomes a float
-octal: 0755            # becomes an integer, converted from octal
+octal: 0755            # YAML 1.0-style, becomes an integer, converted from octal
+also_octal: 0o755      # YAML 1.2-style, becomes an integer, converted from octal
 hex: 0xff              # becomes an integer, converted from hexadecimal
-infinite: (inf)        # YAML 1.0-style, becomes a float, the PHP constant for infinity
-minus_inf: (-inf)      # YAML 1.0-style, becomes a float, the PHP constant for negative infinity
-also_nan: (NaN)        # YAML 1.0-style, becomes a float, the PHP constant for not-a-number
-also_infinity: .inf    # YAML 1.2-style, becomes a float, the PHP constant for infinity
-also_minus_inf: -.inf  # YAML 1.2-style, becomes a float, the PHP constant for negative infinity
-not_a_number: .NaN     # YAML 1.2-style, becomes a float, the PHP constant for not-a-number
+infinite: (inf)        # YAML 1.0-style, becomes INF, PHP constant for infinity
+minus_inf: (-inf)      # YAML 1.0-style, becomes -INF, PHP constant for negative infinity
+also_nan: (NaN)        # YAML 1.0-style, becomes NAN, PHP constant for not-a-number
+also_infinity: .inf    # YAML 1.2-style, becomes INF, PHP constant for infinity
+also_minus_inf: -.inf  # YAML 1.2-style, becomes -INF, PHP constant for negative infinity
+not_a_number: .NaN     # YAML 1.2-style, becomes NAN, PHP constant for not-a-number
 ```
 
 ### Booleans & Nulls
