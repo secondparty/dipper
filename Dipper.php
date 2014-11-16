@@ -239,16 +239,16 @@ class Dipper
 			$new_value = self::$booleans[$trimmed_lower];
 		} elseif ($first_character === '[' && substr($trimmed_lower, -1) === ']') {
 			// it's a short-hand list!
-			$new_value = explode(',', trim($value, '[]'));
+			$new_value = explode(',', trim(self::unreplaceAll($value, true), '[]'));
 			foreach ($new_value as &$line) {
-				$line = self::unreplaceAll(trim($line));
+				$line = trim($line);
 			}
 		} elseif ($first_character === '|') {
 			// it's a literal scalar!
 			$new_value = self::unreplaceAll(substr($value, strpos($value, "\n") + 1), true);
 		} elseif ($first_character === '>') {
 			// it's a fold-able scalar!
-			$new_value = self::unreplaceAll(preg_replace('/^(\S[^\n]*)\n(?=\S)/m', '$1 ', substr($value, strpos($value, "\n") + 1)));
+			$new_value = self::unreplaceAll(preg_replace('/^(\S[^\n]*)\n(?=\S)/m', '$1 ', substr($value, strpos($value, "\n") + 1)), true);
 		} elseif ($first_two === '- ' || $first_two === "-\n") {
 			// it's a standard list!
 			$items = self::breakIntoStructures($value);
@@ -297,7 +297,7 @@ class Dipper
 			$new_value = NAN;
 		} else {
 			// it is what it is, a string probably!
-			$new_value = rtrim(self::unreplaceAll($value));
+			$new_value = rtrim(self::unreplaceAll($value, true));
 		}
 
 		if (empty($key)) {
@@ -562,20 +562,28 @@ class Dipper
 		// determine string formatting
 		$needs_quoting  = strpos($value, ':') !== false || $value === 'true' || $value === 'false' || is_numeric($value);
 		$needs_scalar   = strpos($value, "\n") !== false || strlen($value) > self::$max_line_length;
+		$needs_literal  = strpos($value, "\n") !== false;
 
 		if ($needs_scalar) {
-			// this is a literal scalar
-			$string  = "|\n" . wordwrap($value, (self::$max_line_length - self::$indent_size * $depth + 1), "\n");
+			// this is a scalar
+			$string  = ">";
+
+			if ($needs_literal) {
+				$string = "|";
+			}
+
+			$string  = $string . "\n" . wordwrap($value, (self::$max_line_length - self::$indent_size * $depth + 1), "\n");
 			$output  = explode("\n", $string);
 
 			$first = true;
 			foreach ($output as &$line) {
 				if ($first) {
+					// leave first line untouched
 					$first = null;
 					continue;
 				}
 
-				$line = self::$empty_indent . $line;
+				$line = str_repeat(self::$empty_indent, $depth) . $line;
 			}
 
 			return join("\n", $output);
