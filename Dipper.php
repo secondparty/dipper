@@ -51,25 +51,25 @@ class Dipper
 
 	/**
 	 * The size of the indent (in spaces) being used
-	 * @private int
+	 * @public int
 	 */
 	public static $indent_size = 0;
 
 	/**
 	 * A string representation of one empty indent (based on self::$indent_size)
-	 * @private null
+	 * @public null
 	 */
 	public static $empty_indent = null;
 
 	/**
 	 * Iterator used for replacements
-	 * @private int
+	 * @public int
 	 */
 	public static $i = 0;
 
 	/**
 	 * List of strings that register as booleans/null values and their mappings
-	 * @private array
+	 * @public array
 	 */
 	public static $booleans = array(
 		'true'  => true,
@@ -77,6 +77,12 @@ class Dipper
 		'~'     => null,
 		'null'  => null
 	);
+
+	/**
+	 * Maximum line length when creating YAML
+	 * @public int
+	 */
+	public static $max_line_length = 80;
 
 
 	// public interface
@@ -110,26 +116,25 @@ class Dipper
 
 
 	/**
-	 * Builds YAML from PHP
+	 * Makes YAML from PHP
 	 *
-	 * @param mixed  $php  PHP to build into YAML
-	 * @param int  $indent_size  Size of the indent to use in YAML
+	 * @param mixed  $php  PHP to make into YAML
 	 * @return string
 	 */
-	public static function build($php, $indent_size=2)
+	public static function make($php)
 	{
 		// ensure that this is an array
 		$php = (array) $php;
 
 		// set the indent size
-		self::$indent_size   = $indent_size;
+		self::$indent_size   = 2;
 		self::$empty_indent  = str_repeat(' ', self::$indent_size);
 
 		// output to build up for returning
 		$output = "---\n";
 
 		// parse through php array
-		$output = $output . self::make($php);
+		$output = $output . self::build($php);
 
 		return $output;
 	}
@@ -479,7 +484,7 @@ class Dipper
 	 * @param int  $depth  Indent depth to prepend to each line
 	 * @return string
 	 */
-	private static function make($value, $depth=0)
+	private static function build($value, $depth=0)
 	{
 		if ($value === '' || is_null($value) || $value === 'null' || $value === '~') {
 			// this is empty or a null value
@@ -493,18 +498,18 @@ class Dipper
 				// this is a list
 				foreach ($value as $subvalue) {
 					if (is_array($subvalue)) {
-						$output[] = "-\n" . self::make($subvalue, $depth + 1);
+						$output[] = "-\n" . self::build($subvalue, $depth + 1);
 					} else {
-						$output[] = "- " . self::make($subvalue, $depth + 1);
+						$output[] = "- " . self::build($subvalue, $depth + 1);
 					}
 				}
 			} else {
 				// this is a map
 				foreach ($value as $key => $subvalue) {
 					if (is_array($subvalue)) {
-						$output[] = $key . ":\n" . self::make($subvalue, $depth + 1);
+						$output[] = $key . ":\n" . self::build($subvalue, $depth + 1);
 					} else {
-						$output[] = $key . ": " . self::make($subvalue, $depth + 1);
+						$output[] = $key . ": " . self::build($subvalue, $depth + 1);
 					}
 				}
 			}
@@ -556,11 +561,11 @@ class Dipper
 
 		// determine string formatting
 		$needs_quoting  = strpos($value, ':') !== false || $value === 'true' || $value === 'false' || is_numeric($value);
-		$needs_scalar   = strpos($value, "\n") !== false || strlen($value) > 80;
+		$needs_scalar   = strpos($value, "\n") !== false || strlen($value) > self::$max_line_length;
 
 		if ($needs_scalar) {
 			// this is a literal scalar
-			$string  = "|\n" . wordwrap($value, (80 - self::$indent_size * $depth + 1), "\n");
+			$string  = "|\n" . wordwrap($value, (self::$max_line_length - self::$indent_size * $depth + 1), "\n");
 			$output  = explode("\n", $string);
 
 			$first = true;
