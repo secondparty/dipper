@@ -1,6 +1,6 @@
 # Dipper
 
-Dipper parses YAML for a subset of the v1.0 and v1.2 specs.
+Dipper builds and parses YAML for a subset of the v1.0 and v1.2 specs.
 We're calling it a Demi-YAML Parser (DYP… which could be pronounced "dip…" thus, Dipper — naming things is hard).
 
 
@@ -45,8 +45,9 @@ We're talking micro-optimization levels of refactoring.
 
 ## Usage
 
-Dipper is a static object with one public method.
-You pass raw YAML text in, it spits parsed PHP arrays out.
+Dipper is a static object with two public methods: one to parse YAML, and one to build it.
+
+To parse YAML, you pass raw text in, it spits parsed PHP arrays out.
 
 ```php
 // include the file
@@ -57,7 +58,18 @@ $raw_yaml = file_get_contents('/path/to/my-file.yaml');
 $parsed   = Statamic\Dipper\Dipper::parse($raw_yaml);
 ```
 
-## Sample Results
+To build YAML, you pass PHP in, it spits built YAML out.
+
+```php
+// include the file
+require('Dipper.php');
+
+// get your PHP and build YAML
+$php = Statamic\Dipper\Dipper:build($variables);
+```
+
+
+## Sample Parsing Results
 
 In local tests of parsing about 500 lines of YAML, Dipper parses through it in less than half of the time of what SPYC and Symfony are doing. Below are average render times over 250 iterations of each script parsing the same file.
 
@@ -106,8 +118,6 @@ folding_scalar: >
   that will fold up
   line breaks.
 ```
-
-> Note: Because we love using YAML with Markdown, literal scalars will not right-trim each line for whitespace, allowing you to define new lines by ending a line with two spaces.
 
 ### Numbers
 
@@ -169,7 +179,7 @@ You can, of course, mix and match the above values into complex structures and D
 ## Notes
 
 - Both SPYC and Symfony will use the `syck` YAML parsing library if it's installed and enabled on your server. In those instances, YAML parsing will be much, much faster and probably won't be a bottleneck anymore.
-- Dipper is a one-way operation, where as SPYC and Symfony will also convert raw PHP data back into YAML. These libraries both do a great job of this, and we saw no need to reinvent the wheel here. (For now.)
+- Because we love using YAML with Markdown, literal scalars will not right-trim each line for whitespace, allowing you to define Markdown new lines by ending a line with two spaces.
 
 
 ## License

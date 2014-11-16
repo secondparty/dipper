@@ -109,6 +109,32 @@ class Dipper
 	}
 
 
+	/**
+	 * Builds YAML from PHP
+	 *
+	 * @param mixed  $php  PHP to build into YAML
+	 * @param int  $indent_size  Size of the indent to use in YAML
+	 * @return string
+	 */
+	public static function build($php, $indent_size=2)
+	{
+		// ensure that this is an array
+		$php = (array) $php;
+
+		// set the indent size
+		self::$indent_size   = $indent_size;
+		self::$empty_indent  = str_repeat(' ', self::$indent_size);
+
+		// output to build up for returning
+		$output = "---\n";
+
+		// parse through php array
+		$output = $output . self::make($php);
+
+		return $output;
+	}
+
+
 
 	// the guts
 	// --------------------------------------------------------------------------------
@@ -261,7 +287,7 @@ class Dipper
 		} elseif ($trimmed_lower === '-.inf' || $trimmed_lower === '(-inf)') {
 			// it's negatively infinite!
 			$new_value = -INF;
-		} elseif ($trimmed_value === '.NaN' || $trimmed_lower === '(NaN)') {
+		} elseif ($trimmed_value === '.NaN' || $trimmed_value === '(NaN)') {
 			// it's specifically not a number!
 			$new_value = NAN;
 		} else {
@@ -443,5 +469,117 @@ class Dipper
 		}
 
 		return ltrim($out);
+	}
+
+
+	/**
+	 * Takes a mixed value and returns YAML
+	 *
+	 * @param mixed  $value  Value to convert to YAML
+	 * @param int  $depth  Indent depth to prepend to each line
+	 * @return string
+	 */
+	private static function make($value, $depth=0)
+	{
+		if ($value === '' || is_null($value) || $value === 'null' || $value === '~') {
+			// this is empty or a null value
+			return '';
+		} elseif (is_array($value)) {
+			// this is an array
+			$output = array();
+
+			// but is this a list or a map?
+			if (array_keys($value) === range(0, count($value) - 1)) {
+				// this is a list
+				foreach ($value as $subvalue) {
+					if (is_array($subvalue)) {
+						$output[] = "-\n" . self::make($subvalue, $depth + 1);
+					} else {
+						$output[] = "- " . self::make($subvalue, $depth + 1);
+					}
+				}
+			} else {
+				// this is a map
+				foreach ($value as $key => $subvalue) {
+					if (is_array($subvalue)) {
+						$output[] = $key . ":\n" . self::make($subvalue, $depth + 1);
+					} else {
+						$output[] = $key . ": " . self::make($subvalue, $depth + 1);
+					}
+				}
+			}
+
+			// indent this as necessary
+			if ($depth > 0) {
+				foreach ($output as &$line) {
+					$line = str_repeat(self::$empty_indent, $depth) . $line;
+				}
+			}
+
+			return join("\n", $output);
+		} elseif (is_bool($value)) {
+			// this is a boolean
+			if ($value) {
+				return 'true';
+			}
+
+			return 'false';
+		} elseif (!is_string($value) && (is_int($value) || is_float($value))) {
+			// this is a number
+			if (is_infinite($value)) {
+				// an *infinite* number
+				if ($value > 0) {
+					return '(inf)';
+				}
+
+				return '(-inf)';
+			} elseif (is_nan($value)) {
+				// this is a not-a-number
+				return '(NaN)';
+			}
+
+			// this is some sort of other number
+			return (string) $value;
+		}
+
+		// this is either a string or an object
+		if (is_object($value)) {
+			// this is an object
+			if (!method_exists($value, '__toString')) {
+				// but can't be converted to strings
+				return '';
+			}
+
+			// convert this to a string
+			$value = (string) $value;
+		}
+
+		// determine string formatting
+		$needs_quoting  = strpos($value, ':') !== false || $value === 'true' || $value === 'false' || is_numeric($value);
+		$needs_scalar   = strpos($value, "\n") !== false || strlen($value) > 80;
+
+		if ($needs_scalar) {
+			// this is a literal scalar
+			$string  = "|\n" . wordwrap($value, (80 - self::$indent_size * $depth + 1), "\n");
+			$output  = explode("\n", $string);
+
+			$first = true;
+			foreach ($output as &$line) {
+				if ($first) {
+					$first = null;
+					continue;
+				}
+
+				$line = self::$empty_indent . $line;
+			}
+
+			return join("\n", $output);
+		} elseif ($needs_quoting) {
+			// this is a quoted string
+			return trim('\'' . str_replace('\'', '\\\'', $value) . '\'');
+		}
+
+		// this is a small, no-quote-needed string
+		return trim($value);
 	}
 }
