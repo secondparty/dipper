@@ -11,12 +11,12 @@ Every content file has front matter at the top consisting of YAML.
 Even templates and layouts can have YAML prepended to them.
 The point is, each page load in Statamic can result in quite a bit of YAML parsing.
 
-Statamic has shipped with two YAML parsers for quite a few versions:
+Statamic has traditionally shipped with two YAML parsers for quite some time:
 
 - SPYC (the last tagged release from February 2013)
 - Symfony (the latest version)
 
-Of the two, we've always prefered SPYC because it's faster and parsing for a friendlier version of the YAML spec.
+Of the two, we've always preferred SPYC because it's faster and is parsing for a friendlier version of the YAML spec.
 In the end, we leave the choice of parser up to users with the `_yaml_mode` setting.
 
 However, though SPYC is faster than Symfony, YAML parsing has found its way to the top of the bottleneck list for page rendering in Statamic.
@@ -45,9 +45,9 @@ We're talking micro-optimization levels of refactoring.
 
 ## Usage
 
-Dipper is a static object with two public methods: one to parse YAML, and one to build it.
+Dipper is a static object with two public methods: one to parse YAML (`parse`), and one to make YAML (`make`).
 
-To parse YAML, you pass raw text in, it spits parsed PHP arrays out.
+To parse YAML into PHP, you pass raw text in and it spits parsed PHP arrays out the other side.
 
 ```php
 // include the file
@@ -58,7 +58,7 @@ $raw_yaml = file_get_contents('/path/to/my-file.yaml');
 $parsed   = Statamic\Dipper\Dipper::parse($raw_yaml);
 ```
 
-To build YAML, you pass PHP in, it spits built YAML out.
+To make YAML from PHP, you pass PHP in and it spits built YAML out the other side.
 
 ```php
 // include the file
@@ -69,7 +69,7 @@ $php = Statamic\Dipper\Dipper:build($variables);
 ```
 
 
-## Sample Parsing Results
+## Speed Tests
 
 In local tests of parsing about 500 lines of YAML, Dipper parses through it in less than half of the time of what SPYC and Symfony are doing. Below are average render times over 250 iterations of each script parsing the same file.
 
@@ -79,12 +79,20 @@ Symfony:  ~24ms
 Dipper:   ~10ms
 ``` 
 
+When it came to building files, Dipper shines again.
+
+```
+SPYC:     ~16ms   - the default Statamic YAML builder
+Symfony:   ~8ms
+Dipper:    ~2ms
+```
+
 And while yes, these are *milliseconds* we're talking about, every little bit counts.
 
 
-## What It Parses
+## What It Will Parse
 
-Dipper aims to parse the YAML structures that most YAML parsers will create when converting straight PHP into YAML. It will parse:
+Dipper aims to parse the YAML structures that a parser will create when converting straight PHP into YAML. It will parse:
 
 ### Strings
 
@@ -174,6 +182,21 @@ map:
 ### Combinations of the Above
 
 You can, of course, mix and match the above values into complex structures and Dipper should handle them just fine.
+
+
+## What It Will Make
+
+Dipper's `make` method will convert the following PHP data types and make YAML out of them:
+
+- strings
+- integers
+- floats (including any float constants)
+- booleans
+- null values
+- empty strings
+- sequential arrays (into lists)
+- associative arrays (into maps)
+- objects (if they've implemented `__toString`)
 
 
 ## Notes
