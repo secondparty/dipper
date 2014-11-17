@@ -160,7 +160,7 @@ class Dipper
 			// remove double-quoted strings
 			if (strpos($structure, '"') !== false) {
 				$structure = preg_replace_callback('/".*?(?<!\\\)"/m', function($item) {
-					$key = '__r@-' . self::$i++ . '__';
+					$key = '__r@-' . Dipper::$i++ . '__';
 					Dipper::$replacement_types[$key] = '"';
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
 					return $key;
@@ -170,7 +170,7 @@ class Dipper
 			// remove single-quoted strings
 			if (strpos($structure, '\'') !== false) {
 				$structure = preg_replace_callback('/\'.*?(?<!\\\)\'/m', function($item) {
-					$key = '__r@-' . self::$i++ . '__';
+					$key = '__r@-' . Dipper::$i++ . '__';
 					Dipper::$replacement_types[$key] = '\'';
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
 					return $key;
