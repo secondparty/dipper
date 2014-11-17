@@ -406,7 +406,7 @@ class Dipper
 		return preg_replace_callback('/__r@-\d+__/', function($matches) use ($include_type) {
 			if ($include_type) {
 				// we want to add in the same quotes (single or double) that this originally came with
-				return Dipper::$replacement_types[$matches[0]] . self::unreplace($matches[0]) . self::$replacement_types[$matches[0]];
+				return Dipper::$replacement_types[$matches[0]] . Dipper::unreplace($matches[0]) . Dipper::$replacement_types[$matches[0]];
 			}
 
 			return Dipper::unreplace($matches[0]);
