@@ -129,9 +129,9 @@ class Dipper
 			// remove double-quoted strings
 			if (strpos($structure, '"') !== false) {
 				$structure = preg_replace_callback('/".*?(?<!\\\)"/m', function($item) {
-					$key = '__r@-' . self::$i++ . '__';
-					self::$replacement_types[$key] = '"';
-					self::$replacements[$key] = substr($item[0], 1, -1);
+					$key = '__r@-' . Dipper::$i++ . '__';
+					Dipper::$replacement_types[$key] = '"';
+					Dipper::$replacements[$key] = substr($item[0], 1, -1);
 					return $key;
 				}, $structure);
 			}
@@ -139,9 +139,9 @@ class Dipper
 			// remove single-quoted strings
 			if (strpos($structure, '\'') !== false) {
 				$structure = preg_replace_callback('/\'.*?(?<!\\\)\'/m', function($item) {
-					$key = '__r@-' . self::$i++ . '__';
-					self::$replacement_types[$key] = '\'';
-					self::$replacements[$key] = substr($item[0], 1, -1);
+					$key = '__r@-' . Dipper::$i++ . '__';
+					Dipper::$replacement_types[$key] = '\'';
+					Dipper::$replacements[$key] = substr($item[0], 1, -1);
 					return $key;
 				}, $structure);
 			}
@@ -406,10 +406,10 @@ class Dipper
 		return preg_replace_callback('/__r@-\d+__/', function($matches) use ($include_type) {
 			if ($include_type) {
 				// we want to add in the same quotes (single or double) that this originally came with
-				return self::$replacement_types[$matches[0]] . self::unreplace($matches[0]) . self::$replacement_types[$matches[0]];
+				return Dipper::$replacement_types[$matches[0]] . self::unreplace($matches[0]) . self::$replacement_types[$matches[0]];
 			}
 
-			return self::unreplace($matches[0]);
+			return Dipper::unreplace($matches[0]);
 		}, $text);
 	}
 
