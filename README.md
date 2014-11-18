@@ -85,11 +85,11 @@ Each of these tests used a 500-line YAML file.
 These tests worked as follow:
 
 For parsing, the raw YAML gets loaded into a variable, and then each parser parsed that raw YAML 250 times.
-The center column above (*Parsing*) is the average time to parse the YAML.
+The center column above (`YAML->PHP`) is the average time to parse the YAML.
 
 For making, the same raw YAML is loaded and then parsed one time into PHP.
 That PHP is then built back into YAML 250 times.
-The right column above (*Making*) is the average time to make the YAML.
+The right column above (`PHP->YAML`) is the average time to make the YAML.
 
 As you can see, Dipper currently comes out nicely ahead in both tests.
 And while yes, these are *milliseconds* we're talking about, every little bit counts.
