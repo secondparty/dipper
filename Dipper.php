@@ -84,6 +84,7 @@ class Dipper
 	 */
 	public static $max_line_length = 80;
 
+	
 
 	// public interface
 	// --------------------------------------------------------------------------------
