@@ -153,16 +153,24 @@ class Dipper
 	 */
 	private static function parseStructures($structures, $is_root=false)
 	{
+		// this is the array that we'll eventually return, it will hold parsed structures
 		$output = array();
 
 		// loop through each structure, escaping quoted content and comments, then parsing it
 		foreach ($structures as $structure) {
-			// remove double-quoted strings
+			// replace any double-quoted strings, will be unreplaced later
 			if (strpos($structure, '"') !== false) {
 				$structure = preg_replace_callback('/".*?(?<!\\\)"/m', function($item) {
+					// create a unique key from the class-wide iterator
 					$key = '__r@-' . Dipper::$i++ . '__';
+					
+					// mark that this key is using double-quotes
 					Dipper::$replacement_types[$key] = '"';
+					
+					// store the literal string value without its surrounding quotes
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
+					
+					// return the key that we made for this replacement
 					return $key;
 				}, $structure);
 			}
@@ -170,35 +178,60 @@ class Dipper
 			// remove single-quoted strings
 			if (strpos($structure, '\'') !== false) {
 				$structure = preg_replace_callback('/\'.*?(?<!\\\)\'/m', function($item) {
+					// create a unique key from the class-wide iterator
 					$key = '__r@-' . Dipper::$i++ . '__';
+					
+					// mark that this key is using single-quotes
 					Dipper::$replacement_types[$key] = '\'';
+					
+					// store the literal string value without its surrounding quotes
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
+					
+					// return the key that we made for this replacement
 					return $key;
 				}, $structure);
 			}
 
-			// remove comments
+			// remove comments, we do this after removing literal strings so that we don't accidentally
+			// destroy anything that's been quoted (and, thus, something that should be kept)
 			if (strpos($structure, '#') !== false) {
+				// hunt for a colon
 				$colon = strpos($structure, ':');
+				
+				// how did that go?
 				if ($colon !== false) {
+					// colon found! try to grab the first non-whitespace character after the colon
 					$first_value_char = substr(trim(substr($structure, $colon + 1)), 0, 1);
+					
+					// is this a scalar?
 					if ($first_value_char !== '>' && $first_value_char !== '|') {
+						// nope, it's just a string that's not quoted-escaped, meaning that
+						// we should remove from the # to the end of the line
 						$structure = preg_replace('/#.*?$/m', '', $structure);
 					}
 				}
 			}
 
-			// add to $output
+			// by this point, $structure has been cleaned for literal strings and comments, which
+			// means that we can finally parse the structure itself
 			if ($result = self::parseStructure($structure)) {
+				// good news, something was parsed
 				if ($is_root && $structure[0] === '-' && empty($result[1]) && !empty($result[0])) {
-					// handles cases where the outer-most element is just a list
+					// we've found a special case:
+					// $is_root will only be true on the outer-most YAML depth; the first character 
+					// here appears to be a hyphen, and parseStructure only returned a value rather
+					// than a key value pair -- these are all indicators that we're building a
+					// root-level list instead of the standard root-level map; we add this value
+					// straight to the output array
 					$output[] = $result[0];
 				} else {
+					// a key-value pair was returned from parseStructure, so we'll add that to output
 					$output[$result[0]] = $result[1];
 				}
 			}
 		}
 
+		// return the output array that we've been building
 		return $output;
 	}
 
@@ -211,22 +244,22 @@ class Dipper
 	 */
 	private static function parseStructure($structure)
 	{
-		// separate key from value
+		// this may be a key-value pair, so we break them up
 		$out    = self::breakIntoKeyValue($structure);
 		$key    = $out[0];  // this is slightly faster...
 		$value  = $out[1];  // ...than using list() out of the method
 
-		// transformations that are used more than once
-		$first_two        = substr($value, 0, 2);
-		$first_character  = $first_two[0];
-		$trimmed_lower    = strtolower(trim($value));
-
-		// this is empty, abort
+		// if the key and value are empty, abort
 		if (!isset($key) && empty($value)) {
 			return null;
 		}
-
-		// what is this?
+		
+		// store a few transformations that are used multiple times in the if/elseif/else below
+		$first_two        = substr($value, 0, 2);
+		$first_character  = $first_two[0];
+		$trimmed_lower    = strtolower(trim($value));
+		
+		// what is this value?
 		if ($value === '') {
 			// it's a nothing!
 			$new_value = null;
@@ -299,6 +332,7 @@ class Dipper
 			$new_value = rtrim(self::unreplaceAll($value, true));
 		}
 
+		// now that we know what value it, let's return something
 		if (empty($key)) {
 			// no key is set, so this is probably a value-parsing end-point
 			return $new_value;
@@ -320,8 +354,10 @@ class Dipper
 		// find the first colon
 		$colon = strpos($text, ':');
 
+		// did we find a colon?
 		if (empty($colon)) {
-			// no colons here, this is just a value
+			// there are either no colons here or it starts with one;
+			// either way, this is just a value
 			return array(null, self::outdent($text));
 		}
 
@@ -338,6 +374,7 @@ class Dipper
 	 * Sets the indent level currently being used
 	 *
 	 * @param string  $yaml  YAML to examine for indents
+	 * @return void
 	 */
 	private static function setIndent($yaml)
 	{
@@ -368,9 +405,12 @@ class Dipper
 		// slightly faster than array_map, breaks on line-ending	
 		$lines = explode(PHP_EOL, $yaml);
 		foreach ($lines as $line) {
+			// get rid of any left-hanging whitespace
 			$trimmed = ltrim($line);
+			
+			// is this something that's not a full-line comment or a document separator?
 			if (substr($line, 0, 1) !== '#' && strpos($trimmed, '---') !== 0) {
-				// concatenate to $first_pass, standardizing line breaks as \n's
+				// cool, concatenate to $first_pass, standardizing line breaks as \n's
 				$first_pass = $first_pass . "\n" . $line;
 			}
 		}
@@ -389,13 +429,13 @@ class Dipper
 	private static function breakIntoStructures($yaml)
 	{
 		// break the yaml into lines
-		$lines  = explode("\n", $yaml);
+		$lines = explode("\n", $yaml);
 		
 		// a place to store completed structures
-		$parts  = array();
+		$parts = array();
 		
 		// a temporary variable for concatenating structures one line at a time
-		$chunk  = null;
+		$chunk = null;
 
 		// loop through the lines, looking for structures
 		// if a line's first character isn't a space or new line, that means it starts a structure chunk,
@@ -462,7 +502,7 @@ class Dipper
 			return $text;
 		}
 
-		// unreplace all placeholders
+		// return the text with all placeholders unreplaced
 		return preg_replace_callback('/__r@-\d+__/', function($matches) use ($include_type) {
 			// $matches is a list of unreplacement placeholder keys			
 			if ($include_type) {
@@ -485,10 +525,10 @@ class Dipper
 	private static function outdent($value)
 	{
 		// break the yaml into lines
-		$lines  = explode("\n", $value);
+		$lines = explode("\n", $value);
 		
 		// the output string that we'll concatenate onto
-		$out    = '';
+		$out = '';
 
 		// loop through the lines
 		foreach ($lines as $line) {
@@ -497,6 +537,7 @@ class Dipper
 				return $value;
 			}
 
+			// check what we've got here
 			if (!isset($line[0])) {
 				// this appears to be an empty line
 				$out = $out . "\n" . self::$empty_indent;
