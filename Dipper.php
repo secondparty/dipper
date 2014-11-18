@@ -136,6 +136,7 @@ class Dipper
 		// parse through php array
 		$output = $output . self::build($php);
 
+		// return what we've made
 		return $output;
 	}
 
