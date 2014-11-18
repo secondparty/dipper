@@ -71,22 +71,27 @@ $php = Statamic\Dipper\Dipper:build($variables);
 
 ## Speed Tests
 
-In local tests of parsing about 500 lines of YAML, Dipper parses through it in less than half of the time of what SPYC and Symfony are doing. Below are average render times over 250 iterations of each script parsing the same file.
+These benchmarks shouldn't be considered very scientific, but they are helpful to get an idea of Dipper in action.
+Each of these tests used a 500-line YAML file.
 
 ```
-SPYC:     ~22ms   - the default Statamic parser
-Symfony:  ~24ms
-Dipper:   ~10ms
-``` 
-
-When it came to building files, Dipper shines again.
-
-```
-SPYC:     ~16ms   - the default Statamic YAML builder
-Symfony:   ~8ms
-Dipper:    ~2ms
+  Parser    |  YAML->PHP  |  PHP->YAML
+------------+-------------+-------------
+  SPYC      |    ~22ms    |    ~17ms      <-- Statamic's default YAML parser
+  Symfony   |    ~24ms    |    ~12ms
+  Dipper    |    ~10ms    |    ~ 3ms
 ```
 
+These tests worked as follow:
+
+For parsing, the raw YAML gets loaded into a variable, and then each parser parsed that raw YAML 250 times.
+The center column above (*Parsing*) is the average time to parse the YAML.
+
+For making, the same raw YAML is loaded and then parsed one time into PHP.
+That PHP is then built back into YAML 250 times.
+The right column above (*Making*) is the average time to make the YAML.
+
+As you can see, Dipper currently comes out nicely ahead in both tests.
 And while yes, these are *milliseconds* we're talking about, every little bit counts.
 
 
