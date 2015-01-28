@@ -1,10 +1,10 @@
 <?php
 /**
  * Dipper
- * A demi-YAML parser by Statamic.
- * View full documentation at http://github.com/statamic/dipper
+ * A demi-YAML parser.
+ * View full documentation at http://github.com/secondparty/dipper
  *
- * Copyright (c) 2014, Statamic
+ * Copyright (c) 2014-2015, Second Party
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-namespace Statamic\Dipper;
+namespace secondparty\Dipper;
 
 class Dipper
 {
