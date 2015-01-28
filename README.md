@@ -1,21 +1,21 @@
 # Dipper
 
-Dipper is fast YAML parser that parses for the more commonly-used subset of YAML's v1.0 and v1.2 official specifications. It is being made freely available for use in personal or commercial projects under the BSD 3-clause license.
+Dipper is fast YAML parser that parses for the more commonly-used subset of YAML’s v1.0 and v1.2 official specifications. It is being made freely available for use in personal or commercial projects under the BSD 3-clause license.
 
 
 ## Philosophy
 
-One has to question themselves when they sit down to create a YAML parser considering there are already a number of nice solutions out there. There's SPYC, which does a wonderful job parsing for YAML 1.0, and Symfony also has a YAML parser that parses to YAML 1.2 specifications. Neither project claims to completely support all aspects of the specs that they repsectively parse for (the specs *are* quite large and in-depth), but they both support a large subset of the defined features. 
+One has to question themselves when they sit down to create a YAML parser considering there are already a number of nice solutions out there. There’s SPYC, which does a wonderful job parsing for YAML 1.0, and Symfony also has a YAML parser that parses to YAML 1.2 specifications. Neither project claims to completely support all aspects of the specs that they repsectively parse for (the specs *are* quite large and in-depth), but they both support a large subset of the defined features. 
 
-But it occurred to us that we rarely use most of those features. Perhaps we're not YAML power-users, but the subset we find ourselves using mostly is the same YAML that those libraries use when they convert straight PHP back to YAML. Mostly: normal key/value pairs (strings, scalars, numbers & booleans), lists, and maps.
+But it occurred to us that we rarely use most of those features. Perhaps we’re not YAML power-users, but the subset we find ourselves using mostly is the same YAML that those libraries use when they convert straight PHP back to YAML. Mostly: normal key/value pairs (strings, scalars, numbers & booleans), lists, and maps.
 
-Part of YAML's design was defining a somewhat complex-to-parse syntax in exchange for simple (yet powerful) formatting for human readability. We found that a lot of the parsing complexity came in supporting features above and beyond the simple subset of YAML that we actually use.
+Part of YAML’s design was defining a somewhat complex-to-parse syntax in exchange for simple (yet powerful) formatting for human readability. We found that a lot of the parsing complexity came in supporting features above and beyond the simple subset of YAML that we actually use.
 
-And thus, Dipper was born. It's built for speed, micro-optimized to parse the parts of YAML that we actually use, and nothing more.
+And thus, Dipper was born. It’s built for speed, micro-optimized to parse the parts of YAML that we actually use, and nothing more.
 
 ### Results
 
-We've run a couple of benchmarks to make sure that Dipper *is* quick and thus, is worth releasing, and here is what we found. Keep in mind that we're not scientists, but are here as an example of comparison.
+We’ve run a couple of benchmarks to make sure that Dipper *is* quick and thus, is worth releasing, and here is what we found. Keep in mind that we’re not scientists, but are here as an example of comparison.
 
 ```
   Parser    |  YAML->PHP  |  PHP->YAML
@@ -23,7 +23,7 @@ We've run a couple of benchmarks to make sure that Dipper *is* quick and thus, i
   SPYC      |    ~22ms    |    ~17ms
   Symfony   |    ~24ms    |    ~12ms
   Dipper    |    ~10ms    |    ~ 3ms
-  ```
+```
 
 We ran the same 500-line YAML file through each of the parsers described in this document 250 times. We then took the average time for each parser to parse the document to get the `YAML->PHP` time. Next, we parsed the 500-line YAML file into PHP and then converted that back into YAML 250 times per parser. The average time to convert it back are the `PHP->YAML` times.
 
@@ -46,7 +46,7 @@ $php = Dipper::parse($yaml);
 $yaml = Dipper::make($php);
 ```
 
-That's all there is to it.
+That’s all there is to it.
 
 
 ## What It Parses
@@ -129,7 +129,7 @@ map:
 
 ### Combinations of These
 
-In addition to each of these elements individually, you can also combine and nest them as you'd expect to create more complex structures.
+In addition to each of these elements individually, you can also combine and nest them as you’d expect to create more complex structures.
 
 
 ## What it Makes
@@ -144,10 +144,10 @@ Below is a complete list of the PHP that Dipper will build fromhe YAML passed to
 - empty strings
 - sequential arrays (into lists)
 - associative arrays (into maps)
-- objects (if they've implemented `__toString`)
+- objects (if they’ve implemented `__toString`)
 
 
 ## Notes
-- Like SPYC and Symfony's code, Dipper also supports the `syck` YAML parsing extension for PHP if it's installed and enabled on your server. This moves YAML parsing down to the system level, resulting in parsing that is much, much faster than what straight PHP code itself can deliver.
+- Like SPYC and Symfony’s code, Dipper also supports the `syck` YAML parsing extension for PHP if it’s installed and enabled on your server. This moves YAML parsing down to the system level, resulting in parsing that is much, much faster than what straight PHP code itself can deliver.
 - In addition to YAML, we also really like Markdown. To better support Markdown, literal scalars will not right-trim each line for extra whitespace, allowing you to define Markdown-style new lines by ending a line with two spaces.
 
