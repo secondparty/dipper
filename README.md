@@ -1,82 +1,59 @@
 # Dipper
 
-Dipper parses YAML for a subset of the v1.0 and v1.2 specs.
-We're calling it a Demi-YAML Parser (DYP… which could be pronounced "dip…" thus, Dipper — naming things is hard).
+Dipper is fast YAML parser that parses for the more commonly-used subset of YAML's v1.0 and v1.2 official specifications. It is being made freely available for use in personal or commercial projects under the BSD 3-clause license.
 
 
-## Focused on Speed
+## Philosophy
 
-All of Statamic's configuration files are written in YAML.
-Every content file has front matter at the top consisting of YAML.
-Even templates and layouts can have YAML prepended to them.
-The point is, each page load in Statamic can result in quite a bit of YAML parsing.
+One has to question themselves when they sit down to create a YAML parser considering there are already a number of nice solutions out there. There's SPYC, which does a wonderful job parsing for YAML 1.0, and Symfony also has a YAML parser that parses to YAML 1.2 specifications. Neither project claims to completely support all aspects of the specs that they repsectively parse for (the specs *are* quite large and in-depth), but they both support a large subset of the defined features. 
 
-Statamic has shipped with two YAML parsers for quite a few versions:
+But it occurred to us that we rarely use most of those features. Perhaps we're not YAML power-users, but the subset we find ourselves using mostly is the same YAML that those libraries use when they convert straight PHP back to YAML. Mostly: normal key/value pairs (strings, scalars, numbers & booleans), lists, and maps.
 
-- SPYC (the last tagged release from February 2013)
-- Symfony (the latest version)
+Part of YAML's design was defining a somewhat complex-to-parse syntax in exchange for simple (yet powerful) formatting for human readability. We found that a lot of the parsing complexity came in supporting features above and beyond the simple subset of YAML that we actually use.
 
-Of the two, we've always prefered SPYC because it's faster and parsing for a friendlier version of the YAML spec.
-In the end, we leave the choice of parser up to users with the `_yaml_mode` setting.
+And thus, Dipper was born. It's built for speed, micro-optimized to parse the parts of YAML that we actually use, and nothing more.
 
-However, though SPYC is faster than Symfony, YAML parsing has found its way to the top of the bottleneck list for page rendering in Statamic.
-And that's not to blame either of the parser projects.
-The fault is part of the trade off of using YAML to begin with: easy human readability in exchange for more complex parsing.
+### Results
 
-But having built and used Statamic for a couple years now, it occurred to us that while YAML can do a ton of fancy things, we pretty much never use most of those features.
-All we do is read and store a small list of data types: strings, numbers, booleans, lists, and maps (we sometimes call these "named lists").
-The most complex data structures most of the time are just nested versions of those things.
-So what if we made a YAML parser that only parsed the bits that we use?
+We've run a couple of benchmarks to make sure that Dipper *is* quick and thus, is worth releasing, and here is what we found. Keep in mind that we're not scientists, but are here as an example of comparison.
 
-Say hello to Dipper.
+```
+  Parser    |  YAML->PHP  |  PHP->YAML
+------------+-------------+-------------
+  SPYC      |    ~22ms    |    ~17ms
+  Symfony   |    ~24ms    |    ~12ms
+  Dipper    |    ~10ms    |    ~ 3ms
+  ```
 
+We ran the same 500-line YAML file through each of the parsers described in this document 250 times. We then took the average time for each parser to parse the document to get the `YAML->PHP` time. Next, we parsed the 500-line YAML file into PHP and then converted that back into YAML 250 times per parser. The average time to convert it back are the `PHP->YAML` times.
 
-## Goals
-
-Dipper is a YAML parser with two goals:
-
-- only parse the subset of YAML that we actually use
-- be as fast as possible
-
-Every line of code in Dipper has been written with both of these things in mind.
-The point of Dipper isn't to add on a bunch of cool features, it's to parse a commonly-used subset YAML accurately as quickly as it can.
-We're talking micro-optimization levels of refactoring.
+As you can see by these times, Dipper comes out ahead in both parsing YAML and building it back up.
 
 
 ## Usage
 
-Dipper is a static object with one public method.
-You pass raw YAML text in, it spits parsed PHP arrays out.
+Dipper performs two tasks: it converts well-formed YAML into PHP, and it converts PHP into well-formed YAML.
 
 ```php
-// include the file
+// include Dipper and ready it for use
 require('Dipper.php');
+use secondparty/Dipper/Dipper as Dipper;
 
-// get your YAML and parse it
-$raw_yaml = file_get_contents('/path/to/my-file.yaml');
-$parsed   = Statamic\Dipper\Dipper::parse($raw_yaml);
+// now you can convert YAML into PHP
+$php = Dipper::parse($yaml);
+
+// or you can convert PHP into YAML
+$yaml = Dipper::make($php);
 ```
 
-## Sample Results
-
-In local tests of parsing about 500 lines of YAML, Dipper parses through it in less than half of the time of what SPYC and Symfony are doing. Below are average render times over 250 iterations of each script parsing the same file.
-
-```
-SPYC:     ~22ms   - the default Statamic parser
-Symfony:  ~24ms
-Dipper:   ~10ms
-``` 
-
-And while yes, these are *milliseconds* we're talking about, every little bit counts.
+That's all there is to it.
 
 
 ## What It Parses
 
-Dipper aims to parse the YAML structures that most YAML parsers will create when converting straight PHP into YAML. It will parse:
+Below is a complete list of the subset of YAML that Dipper will parse.
 
 ### Strings
-
-All of the following will be parsed as a string.
 
 ```yaml
 string: this is a string
@@ -93,25 +70,19 @@ url: http://something.com
 
 ### Scalars
 
-Dipper supports both literal and folding scalar values.
-
 ```yaml
 literal_scalar: |
   This is a scalar
   that will preserve
   its line breaks.
-  
+
 folding_scalar: >
   This is a scalar
   that will fold up
   line breaks.
 ```
 
-> Note: Because we love using YAML with Markdown, literal scalars will not right-trim each line for whitespace, allowing you to define new lines by ending a line with two spaces.
-
 ### Numbers
-
-All of the following will be parsed as numbers.
 
 ```yaml
 integer: 42            # becomes an integer 
@@ -121,39 +92,34 @@ also_octal: 0o755      # YAML 1.2-style, becomes an integer, converted from octa
 hex: 0xff              # becomes an integer, converted from hexadecimal
 infinite: (inf)        # YAML 1.0-style, becomes INF, PHP constant for infinity
 minus_inf: (-inf)      # YAML 1.0-style, becomes -INF, PHP constant for negative infinity
-also_nan: (NaN)        # YAML 1.0-style, becomes NAN, PHP constant for not-a-number
+not_a_number: (NaN)    # YAML 1.0-style, becomes NAN, PHP constant for not-a-number
 also_infinity: .inf    # YAML 1.2-style, becomes INF, PHP constant for infinity
 also_minus_inf: -.inf  # YAML 1.2-style, becomes -INF, PHP constant for negative infinity
-not_a_number: .NaN     # YAML 1.2-style, becomes NAN, PHP constant for not-a-number
+also_nan: .NaN         # YAML 1.2-style, becomes NAN, PHP constant for not-a-number
 ```
 
-### Booleans & Nulls
-
-All of the following will be converted when not quoted.
+### Booleans & Null Values
 
 ```yaml
 bool_true: true        # becomes true (as a boolean)
 bool_false: false      # becomes false (as a boolean)
 null_value: null       # becomes a PHP null value
 shorthand_null: ~      # becomes a PHP null value
+empty_value:           # becomes a PHP null value
 ```
 
 ### Lists
 
-Both forms of lists will be converted.
-
 ```yaml
-normal_list:
+regular_list:
   - first item
   - second item
   - third item
-  
+
 shorthand_list: [ first item, second item, third item ]
 ```
 
 ### Maps
-
-Dipper converts maps (or "named lists" as we sometimes call them).
 
 ```yaml
 map:
@@ -161,17 +127,27 @@ map:
   two: second
 ```
 
-### Combinations of the Above
+### Combinations of These
 
-You can, of course, mix and match the above values into complex structures and Dipper should handle them just fine.
+In addition to each of these elements individually, you can also combine and nest them as you'd expect to create more complex structures.
+
+
+## What it Makes
+
+Below is a complete list of the PHP that Dipper will build fromhe YAML passed to it.
+
+- strings
+- integers
+- floats (including any float constants)
+- booleans
+- null values
+- empty strings
+- sequential arrays (into lists)
+- associative arrays (into maps)
+- objects (if they've implemented `__toString`)
 
 
 ## Notes
+- Like SPYC and Symfony's code, Dipper also supports the `syck` YAML parsing extension for PHP if it's installed and enabled on your server. This moves YAML parsing down to the system level, resulting in parsing that is much, much faster than what straight PHP code itself can deliver.
+- In addition to YAML, we also really like Markdown. To better support Markdown, literal scalars will not right-trim each line for extra whitespace, allowing you to define Markdown-style new lines by ending a line with two spaces.
 
-- Both SPYC and Symfony will use the `syck` YAML parsing library if it's installed and enabled on your server. In those instances, YAML parsing will be much, much faster and probably won't be a bottleneck anymore.
-- Dipper is a one-way operation, where as SPYC and Symfony will also convert raw PHP data back into YAML. These libraries both do a great job of this, and we saw no need to reinvent the wheel here. (For now.)
-
-
-## License
-
-We're releasing Dipper under the [BSD 3-Clause license](http://opensource.org/licenses/BSD-3-Clause) in the hopes that perhaps it could help other projects out there that parse a subset of YAML like we do.
