@@ -122,19 +122,22 @@ shorthand_list: [ first item, second item, third item ]
 ### Maps
 
 ```yaml
-map:
+regular_map:
   one: first
   two: second
+  
+shorthand_map: { one: first, two: second }
 ```
 
 ### Combinations of These
 
 In addition to each of these elements individually, you can also combine and nest them as you’d expect to create more complex structures.
+Shorthand versions of lists and maps shouldn’t nest other lists or maps.
 
 
 ## What it Makes
 
-Below is a complete list of the PHP that Dipper will build fromhe YAML passed to it.
+Below is a complete list of the PHP that Dipper will build from the YAML passed to it.
 
 - strings
 - integers
@@ -150,4 +153,3 @@ Below is a complete list of the PHP that Dipper will build fromhe YAML passed to
 ## Notes
 - Like SPYC and Symfony’s code, Dipper also supports the `syck` YAML parsing extension for PHP if it’s installed and enabled on your server. This moves YAML parsing down to the system level, resulting in parsing that is much, much faster than what straight PHP code itself can deliver.
 - In addition to YAML, we also really like Markdown. To better support Markdown, literal scalars will not right-trim each line for extra whitespace, allowing you to define Markdown-style new lines by ending a line with two spaces.
-
