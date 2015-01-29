@@ -37,7 +37,7 @@ Dipper performs two tasks: it converts well-formed YAML into PHP, and it convert
 ```php
 // include Dipper and ready it for use
 require('Dipper.php');
-use secondparty/Dipper/Dipper as Dipper;
+use secondparty\Dipper\Dipper as Dipper;
 
 // now you can convert YAML into PHP
 $php = Dipper::parse($yaml);
