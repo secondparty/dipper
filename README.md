@@ -49,7 +49,7 @@ $yaml = Dipper::make($php);
 That’s all there is to it.
 
 
-## What It Parses
+## What It Will Parse
 
 Below is a complete list of the subset of YAML that Dipper will parse.
 

@@ -51,25 +51,25 @@ class Dipper
 
 	/**
 	 * The size of the indent (in spaces) being used
-	 * @private int
+	 * @public int
 	 */
 	public static $indent_size = 0;
 
 	/**
 	 * A string representation of one empty indent (based on self::$indent_size)
-	 * @private null
+	 * @public null
 	 */
 	public static $empty_indent = null;
 
 	/**
 	 * Iterator used for replacements
-	 * @private int
+	 * @public int
 	 */
 	public static $i = 0;
 
 	/**
 	 * List of strings that register as booleans/null values and their mappings
-	 * @private array
+	 * @public array
 	 */
 	public static $booleans = array(
 		'true'  => true,
@@ -78,6 +78,13 @@ class Dipper
 		'null'  => null
 	);
 
+	/**
+	 * Maximum line length when creating YAML
+	 * @public int
+	 */
+	public static $max_line_length = 80;
+
+	
 
 	// public interface
 	// --------------------------------------------------------------------------------
@@ -109,6 +116,32 @@ class Dipper
 	}
 
 
+	/**
+	 * Makes YAML from PHP
+	 *
+	 * @param mixed  $php  PHP to make into YAML
+	 * @return string
+	 */
+	public static function make($php)
+	{
+		// ensure that this is an array
+		$php = (array) $php;
+
+		// set the indent size
+		self::$indent_size   = 2;
+		self::$empty_indent  = str_repeat(' ', self::$indent_size);
+
+		// output to build up for returning
+		$output = "---\n";
+
+		// parse through php array
+		$output = $output . self::build($php);
+
+		// return what we've made
+		return $output;
+	}
+
+
 
 	// the guts
 	// --------------------------------------------------------------------------------
@@ -122,16 +155,24 @@ class Dipper
 	 */
 	private static function parseStructures($structures, $is_root=false)
 	{
+		// this is the array that we'll eventually return, it will hold parsed structures
 		$output = array();
 
 		// loop through each structure, escaping quoted content and comments, then parsing it
 		foreach ($structures as $structure) {
-			// remove double-quoted strings
+			// replace any double-quoted strings, will be unreplaced later
 			if (strpos($structure, '"') !== false) {
 				$structure = preg_replace_callback('/".*?(?<!\\\)"/m', function($item) {
+					// create a unique key from the class-wide iterator
 					$key = '__r@-' . Dipper::$i++ . '__';
+					
+					// mark that this key is using double-quotes
 					Dipper::$replacement_types[$key] = '"';
+					
+					// store the literal string value without its surrounding quotes
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
+					
+					// return the key that we made for this replacement
 					return $key;
 				}, $structure);
 			}
@@ -139,35 +180,60 @@ class Dipper
 			// remove single-quoted strings
 			if (strpos($structure, '\'') !== false) {
 				$structure = preg_replace_callback('/\'.*?(?<!\\\)\'/m', function($item) {
+					// create a unique key from the class-wide iterator
 					$key = '__r@-' . Dipper::$i++ . '__';
+					
+					// mark that this key is using single-quotes
 					Dipper::$replacement_types[$key] = '\'';
+					
+					// store the literal string value without its surrounding quotes
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
+					
+					// return the key that we made for this replacement
 					return $key;
 				}, $structure);
 			}
 
-			// remove comments
+			// remove comments, we do this after removing literal strings so that we don't accidentally
+			// destroy anything that's been quoted (and, thus, something that should be kept)
 			if (strpos($structure, '#') !== false) {
+				// hunt for a colon
 				$colon = strpos($structure, ':');
+				
+				// how did that go?
 				if ($colon !== false) {
+					// colon found! try to grab the first non-whitespace character after the colon
 					$first_value_char = substr(trim(substr($structure, $colon + 1)), 0, 1);
+					
+					// is this a scalar?
 					if ($first_value_char !== '>' && $first_value_char !== '|') {
+						// nope, it's just a string that's not quoted-escaped, meaning that
+						// we should remove from the # to the end of the line
 						$structure = preg_replace('/#.*?$/m', '', $structure);
 					}
 				}
 			}
 
-			// add to $output
+			// by this point, $structure has been cleaned for literal strings and comments, which
+			// means that we can finally parse the structure itself
 			if ($result = self::parseStructure($structure)) {
+				// good news, something was parsed
 				if ($is_root && $structure[0] === '-' && empty($result[1]) && !empty($result[0])) {
-					// handles cases where the outer-most element is just a list
+					// we've found a special case:
+					// $is_root will only be true on the outer-most YAML depth; the first character 
+					// here appears to be a hyphen, and parseStructure only returned a value rather
+					// than a key value pair -- these are all indicators that we're building a
+					// root-level list instead of the standard root-level map; we add this value
+					// straight to the output array
 					$output[] = $result[0];
 				} else {
+					// a key-value pair was returned from parseStructure, so we'll add that to output
 					$output[$result[0]] = $result[1];
 				}
 			}
 		}
 
+		// return the output array that we've been building
 		return $output;
 	}
 
@@ -180,23 +246,22 @@ class Dipper
 	 */
 	private static function parseStructure($structure)
 	{
-		// separate key from value
+		// this may be a key-value pair, so we break them up
 		$out    = self::breakIntoKeyValue($structure);
 		$key    = $out[0];  // this is slightly faster...
 		$value  = $out[1];  // ...than using list() out of the method
 
-		// transformations that are used more than once
-		$first_two        = substr($value, 0, 2);
-		$first_character  = $first_two[0];
-		$trimmed_value    = trim($value);
-		$trimmed_lower    = strtolower($trimmed_value);
-
-		// this is empty, abort
+		// if the key and value are empty, abort
 		if (!isset($key) && empty($value)) {
 			return null;
 		}
-
-		// what is this?
+		
+		// store a few transformations that are used multiple times in the if/elseif/else below
+		$first_two        = substr($value, 0, 2);
+		$first_character  = $first_two[0];
+		$trimmed_lower    = strtolower(trim($value));
+		
+		// what is this value?
 		if ($value === '') {
 			// it's a nothing!
 			$new_value = null;
@@ -208,16 +273,16 @@ class Dipper
 			$new_value = self::$booleans[$trimmed_lower];
 		} elseif ($first_character === '[' && substr($trimmed_lower, -1) === ']') {
 			// it's a short-hand list!
-			$new_value = explode(',', trim($value, '[]'));
-			foreach ($new_value as &$line) {
-				$line = self::unreplaceAll(trim($line));
+			$new_value = explode(',', trim(self::unreplaceAll($value, true), '[]'));
+			foreach ($new_value as &$item) {
+				$item = trim($item);
 			}
 		} elseif ($first_character === '|') {
 			// it's a literal scalar!
 			$new_value = self::unreplaceAll(substr($value, strpos($value, "\n") + 1), true);
 		} elseif ($first_character === '>') {
 			// it's a fold-able scalar!
-			$new_value = self::unreplaceAll(preg_replace('/^(\S[^\n]*)\n(?=\S)/m', '$1 ', substr($value, strpos($value, "\n") + 1)));
+			$new_value = self::unreplaceAll(preg_replace('/^(\S[^\n]*)\n(?=\S)/m', '$1 ', substr($value, strpos($value, "\n") + 1)), true);
 		} elseif ($first_two === '- ' || $first_two === "-\n") {
 			// it's a standard list!
 			$items = self::breakIntoStructures($value);
@@ -241,7 +306,7 @@ class Dipper
 			// it's a number!
 			if (strpos($value, '.') !== false) {
 				// float
-				$new_value = (float)$value;
+				$new_value = (float) $value;
 			} elseif ($first_two === '0x') {
 				// hex
 				$new_value = hexdec($value);
@@ -250,10 +315,10 @@ class Dipper
 				$new_value = octdec($value);
 			} else {
 				// plain-old integer
-				$new_value = (int)$value;
+				$new_value = (int) $value;
 			}
 		} elseif ($first_two === '0o') {
-			// it's a yaml 1.2 octal
+			// it's a yaml 1.2 octal!
 			$new_value = octdec(substr($value, 2));
 		} elseif ($trimmed_lower === '.inf' || $trimmed_lower === '(inf)') {
 			// it's infinite!
@@ -261,14 +326,15 @@ class Dipper
 		} elseif ($trimmed_lower === '-.inf' || $trimmed_lower === '(-inf)') {
 			// it's negatively infinite!
 			$new_value = -INF;
-		} elseif ($trimmed_value === '.NaN' || $trimmed_lower === '(NaN)') {
+		} elseif ($trimmed_lower === '.nan' || $trimmed_lower === '(nan)') {
 			// it's specifically not a number!
 			$new_value = NAN;
 		} else {
 			// it is what it is, a string probably!
-			$new_value = rtrim(self::unreplaceAll($value));
+			$new_value = rtrim(self::unreplaceAll($value, true));
 		}
 
+		// now that we know what value it, let's return something
 		if (empty($key)) {
 			// no key is set, so this is probably a value-parsing end-point
 			return $new_value;
@@ -287,15 +353,21 @@ class Dipper
 	 */
 	private static function breakIntoKeyValue($text)
 	{
+		// find the first colon
 		$colon = strpos($text, ':');
 
+		// did we find a colon?
 		if (empty($colon)) {
+			// there are either no colons here or it starts with one;
+			// either way, this is just a value
 			return array(null, self::outdent($text));
 		}
 
+		// parse out key and value
 		$key    = substr($text, 0, $colon);
 		$value  = self::outdent(substr($text, $colon + 1));
 
+		// return them as an array
 		return array($key, $value);
 	}
 
@@ -304,10 +376,14 @@ class Dipper
 	 * Sets the indent level currently being used
 	 *
 	 * @param string  $yaml  YAML to examine for indents
+	 * @return void
 	 */
 	private static function setIndent($yaml)
 	{
+		// reset the indent size to 0
 		self::$indent_size = 0;
+		
+		// find the first line with whitespace and count it
 		if (preg_match('/^( +)\S/m', $yaml, $matches)) {
 			self::$indent_size = strlen($matches[1]);
 		}
@@ -325,9 +401,10 @@ class Dipper
 	 */
 	private static function prepare($yaml)
 	{
+		// we'll concatenate to this
 		$first_pass = '';
 
-		// slightly faster than array_map	
+		// slightly faster than array_map, breaks on line-ending	
 		$lines = explode(PHP_EOL, $yaml);
 		foreach ($lines as $line) {
 			if (substr($line, 0, 1) !== '#' && strpos($line, '---') !== 0) {
@@ -335,6 +412,7 @@ class Dipper
 			}
 		}
 
+		// return our new string, minus that first extra \n we tacked on in the loop
 		return substr($first_pass, 1);
 	}
 
@@ -347,25 +425,42 @@ class Dipper
 	 */
 	private static function breakIntoStructures($yaml)
 	{
-		$lines  = explode("\n", $yaml);
-		$parts  = array();
-		$chunk  = null;
+		// break the yaml into lines
+		$lines = explode("\n", $yaml);
+		
+		// a place to store completed structures
+		$parts = array();
+		
+		// a temporary variable for concatenating structures one line at a time
+		$chunk = null;
 
+		// loop through the lines, looking for structures
+		// if a line's first character isn't a space or new line, that means it starts a structure chunk,
+		// but if a line's first character *is* a space or new line, it's a continuation of the previous structure chunk
 		foreach ($lines as $line) {
 			if (isset($line[0]) && $line[0] !== ' ' && $line[0] !== "\n") {
+				// the first character exists and is not a space or new line,
+				// if $chunk is null, this is the first pass and we do nothing here,
+				// otherwise, this line starts a new chunk, which means that whatever 
+				// is already in $chunk is a completed structure, and thus needs to be
+				// stored into $parts
 				if ($chunk !== null) {
+					// this isn't the first pass, store this chunk into parts
 					$parts[] = rtrim($chunk);
 				}
 
+				// we reset $chunk to the contents of this line
 				$chunk = $line;
 			} else {
+				// the first character is empty, meaning that this is part of the chunk already started
 				$chunk = $chunk . "\n" . $line;
 			}
 		}
 
-		// add what we were last building
+		// add the last chunk we were working on in the loop
 		$parts[] = rtrim($chunk);
 
+		// parts is now a list of structures
 		return $parts;
 	}
 
@@ -380,9 +475,11 @@ class Dipper
 	{
 		// check that there's an unreplace-able string here
 		if (!isset(self::$replacements[$text]) || strpos($text, '__r@-') === false) {
+			// nothing unreplace-able, return the text
 			return $text;
 		}
 
+		// found something that can be unreplaced, so return its unreplaced value
 		return self::$replacements[$text];
 	}
 
@@ -398,16 +495,19 @@ class Dipper
 	{
 		// check that there's an unreplace-able string here
 		if (!is_string($text) || strpos($text, '__r@-') === false) {
+			// nothing unreplace-able, return the text
 			return $text;
 		}
 
-		// unreplace all
+		// return the text with all placeholders unreplaced
 		return preg_replace_callback('/__r@-\d+__/', function($matches) use ($include_type) {
+			// $matches is a list of unreplacement placeholder keys			
 			if ($include_type) {
-				// we want to add in the same quotes (single or double) that this originally came with
+				// $include_type means that we want to add in the same quotes (single or double) that this originally came with
 				return Dipper::$replacement_types[$matches[0]] . Dipper::unreplace($matches[0]) . Dipper::$replacement_types[$matches[0]];
 			}
 
+			// otherwise, just use the text saved without its surrounding quotes
 			return Dipper::unreplace($matches[0]);
 		}, $text);
 	}
@@ -421,26 +521,157 @@ class Dipper
 	 */
 	private static function outdent($value)
 	{
-		$lines  = explode("\n", $value);
-		$out    = '';
+		// break the yaml into lines
+		$lines = explode("\n", $value);
+		
+		// the output string that we'll concatenate onto
+		$out = '';
 
+		// loop through the lines
 		foreach ($lines as $line) {
 			if (isset($line[0]) && $line[0] !== ' ' && $line[0] !== "\n") {
-				// not something that can be outdent-ed
+				// the first character is not whitespace, and thus cannot be outdented
 				return $value;
 			}
 
+			// check what we've got here
 			if (!isset($line[0])) {
+				// this appears to be an empty line
 				$out = $out . "\n" . self::$empty_indent;
 			} elseif (substr($line, 0, self::$indent_size) === self::$empty_indent) {
-				// remove one level of indenting
+				// remove one self::$indent_size's worth of indenting
 				$out = $out . "\n" . substr($line, self::$indent_size);
 			} else {
-				// remove all left-hand space
+				// this appears to be improperly formatted, so remove all left-hand space
 				$out = $out . ltrim($line, ' ');
 			}
 		}
 
+		// return the value with any left-hanging spaces removed
 		return ltrim($out);
+	}
+
+
+	/**
+	 * Takes a mixed value and returns YAML
+	 *
+	 * @param mixed  $value  Value to convert to YAML
+	 * @param int  $depth  Indent depth to prepend to each line
+	 * @return string
+	 */
+	private static function build($value, $depth=0)
+	{
+		// what type of thing is $value?
+		if ($value === '' || is_null($value) || $value === 'null' || $value === '~') {
+			// this is empty or a null value!
+			return '';
+		} elseif (is_array($value)) {
+			// this is an array!
+			$output = array();
+
+			// but is this a list or a map?
+			if (array_keys($value) === range(0, count($value) - 1)) {
+				// this is a list!
+				foreach ($value as $subvalue) {
+					if (is_array($subvalue)) {
+						$output[] = "-\n" . self::build($subvalue, $depth + 1);
+					} else {
+						$output[] = "- " . self::build($subvalue, $depth + 1);
+					}
+				}
+			} else {
+				// this is a map!
+				foreach ($value as $key => $subvalue) {
+					if (is_array($subvalue)) {
+						$output[] = $key . ":\n" . self::build($subvalue, $depth + 1);
+					} else {
+						$output[] = $key . ": " . self::build($subvalue, $depth + 1);
+					}
+				}
+			}
+
+			// indent this as necessary
+			if ($depth > 0) {
+				foreach ($output as &$line) {
+					// add one empty indent per depth level that we've leo dicaprio'd in
+					$line = str_repeat(self::$empty_indent, $depth) . $line;
+				}
+			}
+
+			return join("\n", $output);
+		} elseif (is_bool($value)) {
+			// this is a boolean!
+			if ($value) {
+				return 'true';
+			}
+
+			return 'false';
+		} elseif (!is_string($value) && (is_int($value) || is_float($value))) {
+			// this is a number!
+			if (is_infinite($value)) {
+				// an *infinite* number!
+				if ($value > 0) {
+					return '(inf)';
+				}
+
+				return '(-inf)';
+			} elseif (is_nan($value)) {
+				// this is specifically a not-a-number!
+				return '(NaN)';
+			}
+
+			// this is some sort of other number!
+			return (string) $value;
+		}
+
+		// if we got here, this is either a string or an object!
+		if (is_object($value)) {
+			// this is an object!
+			if (!method_exists($value, '__toString')) {
+				// but can't be converted to a string :(
+				return '';
+			}
+
+			// convert this to a string for the following string actions
+			$value = (string) $value;
+		}
+
+		// determine string formatting
+		$needs_quoting  = strpos($value, ':') !== false || $value === 'true' || $value === 'false' || is_numeric($value);
+		$needs_scalar   = strpos($value, "\n") !== false || strlen($value) > self::$max_line_length;
+		$needs_literal  = strpos($value, "\n") !== false;
+
+		// format as needed
+		if ($needs_scalar) {
+			// this is a scalar!
+			$string  = ">";
+
+			if ($needs_literal) {
+				// a *literal* scalar!
+				$string = "|";
+			}
+
+			$string  = $string . "\n" . wordwrap($value, (self::$max_line_length - self::$indent_size * $depth + 1), "\n");
+			$output  = explode("\n", $string);
+
+			$first = true;
+			foreach ($output as &$line) {
+				if ($first) {
+					// leave first line untouched
+					$first = null;
+					continue;
+				}
+
+				$line = str_repeat(self::$empty_indent, $depth) . $line;
+			}
+
+			return join("\n", $output);
+		} elseif ($needs_quoting) {
+			// this is a quoted string!
+			return trim('\'' . str_replace('\'', '\\\'', $value) . '\'');
+		}
+
+		// this is a small, no-quotes-needed string!
+		return trim($value);
 	}
 }
