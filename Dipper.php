@@ -84,7 +84,7 @@ class Dipper
 	 */
 	public static $max_line_length = 80;
 
-	
+
 
 	// public interface
 	// --------------------------------------------------------------------------------
@@ -165,13 +165,13 @@ class Dipper
 				$structure = preg_replace_callback('/".*?(?<!\\\)"/m', function($item) {
 					// create a unique key from the class-wide iterator
 					$key = '__r@-' . Dipper::$i++ . '__';
-					
+
 					// mark that this key is using double-quotes
 					Dipper::$replacement_types[$key] = '"';
-					
+
 					// store the literal string value without its surrounding quotes
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
-					
+
 					// return the key that we made for this replacement
 					return $key;
 				}, $structure);
@@ -182,13 +182,13 @@ class Dipper
 				$structure = preg_replace_callback('/\'.*?(?<!\\\)\'/m', function($item) {
 					// create a unique key from the class-wide iterator
 					$key = '__r@-' . Dipper::$i++ . '__';
-					
+
 					// mark that this key is using single-quotes
 					Dipper::$replacement_types[$key] = '\'';
-					
+
 					// store the literal string value without its surrounding quotes
 					Dipper::$replacements[$key] = substr($item[0], 1, -1);
-					
+
 					// return the key that we made for this replacement
 					return $key;
 				}, $structure);
@@ -199,12 +199,12 @@ class Dipper
 			if (strpos($structure, '#') !== false) {
 				// hunt for a colon
 				$colon = strpos($structure, ':');
-				
+
 				// how did that go?
 				if ($colon !== false) {
 					// colon found! try to grab the first non-whitespace character after the colon
 					$first_value_char = substr(trim(substr($structure, $colon + 1)), 0, 1);
-					
+
 					// is this a scalar?
 					if ($first_value_char !== '>' && $first_value_char !== '|') {
 						// nope, it's just a string that's not quoted-escaped, meaning that
@@ -255,12 +255,12 @@ class Dipper
 		if (!isset($key) && empty($value)) {
 			return null;
 		}
-		
+
 		// store a few transformations that are used multiple times in the if/elseif/else below
 		$first_two        = substr($value, 0, 2);
 		$first_character  = $first_two[0];
 		$trimmed_lower    = strtolower(trim($value));
-		
+
 		// what is this value?
 		if ($value === '') {
 			// it's a nothing!
@@ -272,11 +272,16 @@ class Dipper
 			// it's a boolean!
 			$new_value = self::$booleans[$trimmed_lower];
 		} elseif ($first_character === '[' && substr($trimmed_lower, -1) === ']') {
-			// it's a short-hand list!
+			// it's a shorthand list!
 			$new_value = explode(',', trim(self::unreplaceAll($value, true), '[]'));
 			foreach ($new_value as &$item) {
 				$item = trim($item);
 			}
+		} elseif ($first_character === '{' && substr($trimmed_lower, -1) === '}') {
+			// it's a shorthand map!
+			$adjusted   = self::unreplaceAll(preg_replace('/,\s*/s', "\n", trim($value, '{} ')), true);
+			$structures = self::breakIntoStructures(self::outdent($adjusted));
+			$new_value  = self::parseStructures($structures);
 		} elseif ($first_character === '|') {
 			// it's a literal scalar!
 			$new_value = self::unreplaceAll(substr($value, strpos($value, "\n") + 1), true);
@@ -291,10 +296,12 @@ class Dipper
 			foreach ($items as $item) {
 				$item = trim(self::outdent(substr($item, 1)));
 
-				if (strpos($item, ': ') || strpos($item, ":\n")) {
+				if ((strpos($item, ': ') || strpos($item, ":\n")) && substr($item, 0, 1) !== '{' && substr($item, -1) !== '}') {
+					// this is a non-shorthand map
 					$structures = self::breakIntoStructures($item);
 					$new_value[] = self::parseStructures($structures);
 				} else {
+					// this is something else
 					$new_value[] = self::parseStructure($item);
 				}
 			}
@@ -356,10 +363,11 @@ class Dipper
 		// find the first colon
 		$colon = strpos($text, ':');
 
-		// did we find a colon?
-		if (empty($colon)) {
-			// there are either no colons here or it starts with one;
-			// either way, this is just a value
+		// did we find a colon or is this a shorthand map?
+		if (empty($colon) || (substr($text, 0, 1) === '{' && substr($text, -1) === '}')) {
+			// there are either no colons here, it starts with one,
+			// or this is a shorthand map; regardless, this is just
+			// a value, return it without a key
 			return array(null, self::outdent($text));
 		}
 
@@ -382,7 +390,7 @@ class Dipper
 	{
 		// reset the indent size to 0
 		self::$indent_size = 0;
-		
+
 		// find the first line with whitespace and count it
 		if (preg_match('/^( +)\S/m', $yaml, $matches)) {
 			self::$indent_size = strlen($matches[1]);
@@ -407,7 +415,9 @@ class Dipper
 		// slightly faster than array_map, breaks on line-ending	
 		$lines = explode(PHP_EOL, $yaml);
 		foreach ($lines as $line) {
+			// is this something that's not a full-line comment or a document separator?
 			if (substr($line, 0, 1) !== '#' && strpos($line, '---') !== 0) {
+				// cool, concatenate to $first_pass, standardizing line breaks as \n's
 				$first_pass = $first_pass . "\n" . $line;
 			}
 		}
@@ -427,10 +437,10 @@ class Dipper
 	{
 		// break the yaml into lines
 		$lines = explode("\n", $yaml);
-		
+
 		// a place to store completed structures
 		$parts = array();
-		
+
 		// a temporary variable for concatenating structures one line at a time
 		$chunk = null;
 
@@ -523,7 +533,7 @@ class Dipper
 	{
 		// break the yaml into lines
 		$lines = explode("\n", $value);
-		
+
 		// the output string that we'll concatenate onto
 		$out = '';
 
