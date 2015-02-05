@@ -575,15 +575,22 @@ class Dipper
 		if ($value === '' || is_null($value) || $value === 'null' || $value === '~') {
 			// this is empty or a null value!
 			return '';
-		} elseif (is_array($value)) {
+		} elseif (is_array($value) || is_object($value)) {
 			// this is an array!
 			$output = array();
 
-			// but is this a list or a map?
-			if (array_keys($value) === range(0, count($value) - 1)) {
+			if (is_object($value)) {
+				// convert object to array - it is a map
+				$value = get_object_vars($value);
+				$isList = false;
+			} else {
+				// but is this a list or a map?
+				$isList = array_keys($value) === range(0, count($value) - 1);
+			}
+			if ($isList) {
 				// this is a list!
 				foreach ($value as $subvalue) {
-					if (is_array($subvalue)) {
+					if (is_array($subvalue) || is_object($subvalue)) {
 						$output[] = "-\n" . self::build($subvalue, $depth + 1);
 					} else {
 						$output[] = "- " . self::build($subvalue, $depth + 1);
@@ -592,7 +599,7 @@ class Dipper
 			} else {
 				// this is a map!
 				foreach ($value as $key => $subvalue) {
-					if (is_array($subvalue)) {
+					if (is_array($subvalue) || is_object($subvalue)) {
 						$output[] = $key . ":\n" . self::build($subvalue, $depth + 1);
 					} else {
 						$output[] = $key . ": " . self::build($subvalue, $depth + 1);

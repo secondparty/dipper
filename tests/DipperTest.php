@@ -276,4 +276,59 @@ EXPECTED;
 		$this->assertCount(2, $this->parsed['deep_nest_list_shortcut']['first']['second']['third']['fourth']['fifth']);
 		$this->assertEquals('two', $this->parsed['deep_nest_list_shortcut']['first']['second']['third']['fourth']['fifth'][1]);
 	}
+
+  public function testArrayToMap() {
+    $map = [
+      'one' => 'first',
+      'two' => 'second'
+    ];
+    $this->assertEquals(
+      "---\n".
+      "one: first\n".
+      "two: second",
+      \secondparty\Dipper\Dipper::make($map)
+    );
+  }
+
+  public function testNestedArrayToMap() {
+    $map = [
+      'nested' => [
+        'one' => 'first',
+        'two' => 'second'
+      ]
+    ];
+    $this->assertEquals(
+      "---\n".
+      "nested:\n".
+      "  one: first\n".
+      "  two: second",
+      \secondparty\Dipper\Dipper::make($map)
+    );
+  }
+
+  public function testObjectToMap() {
+    $map = new stdClass();
+    $map->one = 'first';
+    $map->two = 'second';
+    $this->assertEquals(
+      "---\n".
+      "one: first\n".
+      "two: second",
+      \secondparty\Dipper\Dipper::make($map)
+    );
+  }
+
+  public function testNestedObjectToMap() {
+    $map = new stdClass();
+    $map->nested = new stdClass();
+    $map->nested->one = 'first';
+    $map->nested->two = 'second';
+    $this->assertEquals(
+      "---\n".
+      "nested:\n".
+      "  one: first\n".
+      "  two: second",
+      \secondparty\Dipper\Dipper::make($map)
+    );
+  }
 }
