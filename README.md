@@ -157,4 +157,4 @@ Below is a complete list of the PHP that Dipper will build from the YAML passed 
 
 ## Thanks
 
-A special thank you to Thomas Weinert for doing the leg work of getting dipper into the composer, travis, and phpunit arenas.
+A special thank you to [Thomas Weinert](https://github.com/ThomasWeinert) for doing the leg work of getting dipper into the composer, travis, and phpunit arenas.
