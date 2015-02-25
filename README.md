@@ -153,3 +153,8 @@ Below is a complete list of the PHP that Dipper will build from the YAML passed 
 ## Notes
 - Like SPYC and Symfony’s code, Dipper also supports the `syck` YAML parsing extension for PHP if it’s installed and enabled on your server. This moves YAML parsing down to the system level, resulting in parsing that is much, much faster than what straight PHP code itself can deliver.
 - In addition to YAML, we also really like Markdown. To better support Markdown, literal scalars will not right-trim each line for extra whitespace, allowing you to define Markdown-style new lines by ending a line with two spaces.
+
+
+## Thanks
+
+A special thank you to Thomas Weinert for doing the leg work of getting dipper into the composer, travis, and phpunit arenas.
