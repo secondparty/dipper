@@ -16,3 +16,6 @@ vendor
 /build
 
 /phpunit.xml
+
+## Mac Junk
+.DS_Store

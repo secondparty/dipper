@@ -1,14 +1,14 @@
 {
     "name": "secondparty/dipper",
     "type": "library",
-    "description": "Fast parser for the more commonly-used subset of YAML’s v1.0 and v1.2",
+    "description": "A fast YAML parser that parses for the more commonly-used subset of YAML’s v1.0 and v1.2 specs.",
     "keywords": ["yaml", "parser"],
     "license": "BSD-3-Clause",
     "homepage": "https://github.com/secondparty/dipper",
     "authors": [
         {
             "name" : "Fred LeBlanc",
-            "email" : "fred@fredhq.com"
+            "email" : "fred@secondparty.com"
         }
     ],
     "require": {
