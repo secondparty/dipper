@@ -2,6 +2,7 @@
 
 // require
 require_once realpath(__DIR__ . '/../vendor/autoload.php');
+//require_once realpath(__DIR__ . '/../Dipper.php');
 
 class DipperTest extends PHPUnit_Framework_TestCase
 {
