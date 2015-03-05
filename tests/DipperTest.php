@@ -58,6 +58,8 @@ regular_list:
   - third item
 
 shorthand_list: [ first item, second item, third item ]
+shorthand_quoted_list: [ 'one', 'two', 'three' ]
+empty_shorthand_list: []
 
 map:
   one: first
@@ -153,6 +155,11 @@ shorthand_list:
   - first item
   - second item
   - third item
+shorthand_quoted_list:
+  - one
+  - two
+  - three
+empty_shorthand_list: []
 map:
   one: first
   two: second
@@ -251,6 +258,7 @@ EXPECTED;
 	{
 		$this->assertCount(3, $this->parsed['regular_list']);
 		$this->assertCount(3, $this->parsed['shorthand_list']);
+		$this->assertInternalType('array', $this->parsed['empty_shorthand_list']);
 	}
 	
 	public function testMaps()

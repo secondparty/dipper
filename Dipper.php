@@ -273,10 +273,15 @@ class Dipper
 			$new_value = self::$booleans[$trimmed_lower];
 		} elseif ($first_character === '[' && substr($trimmed_lower, -1) === ']') {
 			// it's a shorthand list!
-			$new_value = explode(',', trim(self::unreplaceAll($value, true), '[]'));
-			foreach ($new_value as &$item) {
-				$item = trim($item);
+			if (strpos($trimmed_lower, ',') === false && strlen(trim($trimmed_lower, '[] ')) === 0) {
+				$new_value = array();
+			} else {
+				$new_value = explode(',', trim(self::unreplaceAll($value, true), '[]'));
+				foreach ($new_value as &$item) {
+					$item = trim($item);
+				}
 			}
+			
 		} elseif ($first_character === '{' && substr($trimmed_lower, -1) === '}') {
 			// it's a shorthand map!
 			$adjusted   = self::unreplaceAll(preg_replace('/,\s*/s', "\n", trim($value, '{} ')), true);
@@ -576,6 +581,10 @@ class Dipper
 			// this is empty or a null value!
 			return '';
 		} elseif (is_array($value)) {
+			if (!count($value)) {
+				return '[]';
+			}
+			
 			// this is an array!
 			$output = array();
 
@@ -583,19 +592,21 @@ class Dipper
 			if (array_keys($value) === range(0, count($value) - 1)) {
 				// this is a list!
 				foreach ($value as $subvalue) {
+					$result = self::build($subvalue, $depth + 1);
 					if (is_array($subvalue)) {
-						$output[] = "-\n" . self::build($subvalue, $depth + 1);
+						$output[] = "-\n" . $result;
 					} else {
-						$output[] = "- " . self::build($subvalue, $depth + 1);
+						$output[] = "- " . $result;
 					}
 				}
 			} else {
 				// this is a map!
 				foreach ($value as $key => $subvalue) {
-					if (is_array($subvalue)) {
-						$output[] = $key . ":\n" . self::build($subvalue, $depth + 1);
+					$result = self::build($subvalue, $depth + 1);
+					if (is_array($subvalue) && count($subvalue)) {
+						$output[] = $key . ":\n" . $result;
 					} else {
-						$output[] = $key . ": " . self::build($subvalue, $depth + 1);
+						$output[] = $key . ": " . $result;
 					}
 				}
 			}
