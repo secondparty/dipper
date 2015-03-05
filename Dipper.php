@@ -276,7 +276,7 @@ class Dipper
 			if (strpos($trimmed_lower, ',') === false && strlen(trim($trimmed_lower, '[] ')) === 0) {
 				$new_value = array();
 			} else {
-				$new_value = explode(',', trim(self::unreplaceAll($value, true), '[]'));
+				$new_value = explode(',', trim(self::unreplaceAll($value, false), '[]'));
 				foreach ($new_value as &$item) {
 					$item = trim($item);
 				}
