@@ -417,8 +417,16 @@ class Dipper
 		// we'll concatenate to this
 		$first_pass = '';
 
+		// figure out the line endings
+		$line_ending = "\n";
+		if (strpos($yaml, "\r\n") !== false) {
+			$line_ending = "\r\n";
+		} elseif (strpos($yaml, "\r") !== false) {
+			$line_ending = "\r";
+		}
+
 		// slightly faster than array_map, breaks on line-ending	
-		$lines = explode(PHP_EOL, $yaml);
+		$lines = explode($line_ending, $yaml);
 		foreach ($lines as $line) {
 			// is this something that's not a full-line comment or a document separator?
 			if (substr($line, 0, 1) !== '#' && strpos($line, '---') !== 0) {
