@@ -265,9 +265,9 @@ class Dipper
 		if ($value === '') {
 			// it's a nothing!
 			$new_value = null;
-		} elseif ($first_two === '__' && substr($value, 0, 5) === '__r@-') {
+		} elseif ($first_two === '__' && substr($value, 0, 5) === '__r@-' && substr($value, -2) === '__') {
 			// it's a replaceable value!
-			$new_value = self::unreplace($value);
+			$new_value = self::unreplaceDeep($value);
 		} elseif (array_key_exists($trimmed_lower, self::$booleans)) {
 			// it's a boolean!
 			$new_value = self::$booleans[$trimmed_lower];
@@ -352,7 +352,7 @@ class Dipper
 			return $new_value;
 		} else {
 			// there's a key, so this is probably a structure-parsing end-point
-			return array(trim(self::unreplace($key)), $new_value);
+			return array(trim(self::unreplaceDeep($key)), $new_value);
 		}
 	}
 
@@ -489,7 +489,7 @@ class Dipper
 
 
 	/**
-	 * Converts and replaced strings with the original value
+	 * Converts and replaces strings with the original value
 	 *
 	 * @param string  $text  Text to consider for unreplacing
 	 * @return string
@@ -504,6 +504,25 @@ class Dipper
 
 		// found something that can be unreplaced, so return its unreplaced value
 		return self::$replacements[$text];
+	}
+
+
+	/**
+	 * Converts and replaces strings with original values, recurring if needed
+	 * 
+	 * @param string  $text  Text to consider for unreplacing
+	 * @return string
+	 */
+	public static function unreplaceDeep($text)
+	{
+		$text = self::unreplace($text);
+
+		// check if there were sub-replacements
+		if (strpos($text, '__r@-') !== false) {
+			$text = self::unreplaceAll($text, true);
+		}
+		
+		return $text;
 	}
 
 
@@ -523,16 +542,20 @@ class Dipper
 		}
 
 		// return the text with all placeholders unreplaced
-		return preg_replace_callback('/__r@-\d+__/', function($matches) use ($include_type) {
-			// $matches is a list of unreplacement placeholder keys			
-			if ($include_type) {
-				// $include_type means that we want to add in the same quotes (single or double) that this originally came with
-				return Dipper::$replacement_types[$matches[0]] . Dipper::unreplace($matches[0]) . Dipper::$replacement_types[$matches[0]];
-			}
+		while (strpos($text, '__r@-') !== false) {
+			$text = preg_replace_callback('/__r@-\d+__/', function ($matches) use ($include_type) {
+				// $matches is a list of unreplacement placeholder keys			
+				if ($include_type) {
+					// $include_type means that we want to add in the same quotes (single or double) that this originally came with
+					return Dipper::$replacement_types[$matches[0]] . Dipper::unreplaceDeep($matches[0]) . Dipper::$replacement_types[$matches[0]];
+				}
 
-			// otherwise, just use the text saved without its surrounding quotes
-			return Dipper::unreplace($matches[0]);
-		}, $text);
+				// otherwise, just use the text saved without its surrounding quotes
+				return Dipper::unreplaceDeep($matches[0]);
+			}, $text);
+		}
+		
+		return $text;
 	}
 
 
@@ -666,9 +689,10 @@ class Dipper
 		}
 
 		// determine string formatting
-		$needs_quoting  = strpos($value, ':') !== false || $value === 'true' || $value === 'false' || is_numeric($value);
-		$needs_scalar   = strpos($value, "\n") !== false || strlen($value) > self::$max_line_length;
-		$needs_literal  = strpos($value, "\n") !== false;
+		$needs_quoting        = strpos($value, ':') !== false || $value === 'true' || $value === 'false' || is_numeric($value);
+		$needs_double_quoting = strpos($value, '\"') !== false;
+		$needs_scalar         = strpos($value, "\n") !== false || strlen($value) > self::$max_line_length;
+		$needs_literal        = strpos($value, "\n") !== false;
 
 		// format as needed
 		if ($needs_scalar) {
@@ -698,6 +722,9 @@ class Dipper
 		} elseif ($needs_quoting) {
 			// this is a quoted string!
 			return trim('\'' . str_replace('\'', '\\\'', $value) . '\'');
+		} elseif ($needs_double_quoting) {
+			// this has a quoted string within, escape and wrap it
+			return '"' . $value . '"';
 		}
 
 		// this is a small, no-quotes-needed string!

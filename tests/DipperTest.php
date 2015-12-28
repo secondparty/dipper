@@ -18,6 +18,7 @@ working: true
 string: this is a string
 single_quoted_string: 'this is a single-quoted string'
 double_quoted_string: "this is a double-quoted string"
+non_full_quoted_string: "\"This is\" some text in a string"
 string_with_single_quote: this's a string with a single quote
 string_with_colon: 'this is a string: containing a colon'
 string_with_comma: F j, Y
@@ -108,6 +109,7 @@ working: true
 string: this is a string
 single_quoted_string: 'this is a single-quoted string'
 double_quoted_string: "this is a double-quoted string"
+non_full_quoted_string: "\"This is\" some text in a string"
 string_with_single_quote: this's a string with a single quote
 string_with_colon: 'this is a string: containing a colon'
 string_with_comma: F j, Y
@@ -217,6 +219,7 @@ working: true
 string: this is a string
 single_quoted_string: this is a single-quoted string
 double_quoted_string: this is a double-quoted string
+non_full_quoted_string: "\"This is\" some text in a string"
 string_with_single_quote: this's a string with a single quote
 string_with_colon: 'this is a string: containing a colon'
 string_with_comma: F j, Y
