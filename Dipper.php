@@ -332,6 +332,9 @@ class Dipper
 		} elseif ($first_two === '0o') {
 			// it's a yaml 1.2 octal!
 			$new_value = octdec(substr($value, 2));
+		} elseif ($first_two === '0x') {
+			// it's a hex, but PHP7 doesn't think it is!
+			$new_value = hexdec($value);
 		} elseif ($trimmed_lower === '.inf' || $trimmed_lower === '(inf)') {
 			// it's infinite!
 			$new_value = INF;
