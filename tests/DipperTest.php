@@ -108,6 +108,13 @@ deep_nest_list_shortcut:
         fourth:
           fifth: [ one, two ]
 
+sample_test:
+  - name: name
+    label: Name
+    type: text
+    validate:
+      required: true
+
 YAML;
 		
 		$alternate_yaml = <<<YAML
@@ -206,8 +213,15 @@ deep_nest_list_shortcut:
         fourth:
           fifth: [ one, two ]
 
+sample_test:
+  - name: name
+    label: Name
+    type: text
+    validate:
+      required: true
+
 YAML;
-		
+
 		$this->parsed = \secondparty\Dipper\Dipper::parse($yaml);
 		$this->alternate_parsed = \secondparty\Dipper\Dipper::parse($alternate_yaml);
 	}
@@ -221,9 +235,6 @@ YAML;
 		// parsed is the file with `\n` new-lines,
 		// alternate_parsed uses `\r\n` new-lines,
 		// testing that these both parsed correctly
-file_put_contents('parsed', print_r($this->parsed, true));
-file_put_contents('alternative', print_r($this->alternate_parsed, true));
-
 		$this->assertEquals(md5(serialize($this->parsed)), md5(serialize($this->alternate_parsed)));
 	}
 	
@@ -329,6 +340,13 @@ deep_nest_list_shortcut:
           fifth:
             - one
             - two
+sample_test:
+  -
+    name: name
+    label: Name
+    type: text
+    validate:
+      required: true
 EXPECTED;
 
 		$this->assertEquals($expected, $yaml);
