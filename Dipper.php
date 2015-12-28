@@ -258,7 +258,7 @@ class Dipper
 
 		// store a few transformations that are used multiple times in the if/elseif/else below
 		$first_two        = substr($value, 0, 2);
-		$first_character  = $first_two[0];
+		$first_character  = substr($first_two, 0, 1);
 		$trimmed_lower    = strtolower(trim($value));
 
 		// what is this value?
