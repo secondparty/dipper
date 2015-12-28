@@ -2,7 +2,7 @@
 
 // require
 require_once realpath(__DIR__ . '/../vendor/autoload.php');
-//require_once realpath(__DIR__ . '/../Dipper.php');
+// require_once realpath(__DIR__ . '/../Dipper.php');
 
 class DipperTest extends PHPUnit_Framework_TestCase
 {
@@ -36,6 +36,13 @@ folding_scalar: >
   This is a scalar
   that will fold up
   line breaks.
+
+literal_scalar_with_markdown: |
+  ### Testing
+  This should be OK and not a comment
+  
+  ### Another
+  Testing again
 
 integer: 42            # becomes an integer 
 float: -12.12          # becomes a float
@@ -128,6 +135,13 @@ folding_scalar: >
   that will fold up
   line breaks.
 
+literal_scalar_with_markdown: |
+  ### Testing
+  This should be OK and not a comment
+  
+  ### Another
+  Testing again
+
 integer: 42            # becomes an integer 
 float: -12.12          # becomes a float
 octal: 0755            # YAML 1.0-style, becomes an integer, converted from octal
@@ -207,6 +221,9 @@ YAML;
 		// parsed is the file with `\n` new-lines,
 		// alternate_parsed uses `\r\n` new-lines,
 		// testing that these both parsed correctly
+file_put_contents('parsed', print_r($this->parsed, true));
+file_put_contents('alternative', print_r($this->alternate_parsed, true));
+
 		$this->assertEquals(md5(serialize($this->parsed)), md5(serialize($this->alternate_parsed)));
 	}
 	
@@ -232,6 +249,12 @@ literal_scalar: |
   that will preserve
   its line breaks.
 folding_scalar: This is a scalar that will fold up line breaks.
+literal_scalar_with_markdown: |
+  ### Testing
+  This should be OK and not a comment
+  
+  ### Another
+  Testing again
 integer: 42
 float: -12.12
 octal: 493
