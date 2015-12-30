@@ -278,7 +278,7 @@ class Dipper
 			} else {
 				$new_value = explode(',', trim(self::unreplaceAll($value, false), '[]'));
 				foreach ($new_value as &$item) {
-					$item = trim($item);
+					$item = self::parseStructure($item);
 				}
 			}
 			
