@@ -1,6 +1,6 @@
 # Dipper
 
-[![Build Status](https://travis-ci.org/secondparty/dipper.svg)](https://travis-ci.org/secondparty/dipper.svg)
+[![Build Status](https://travis-ci.org/secondparty/dipper.svg)](https://travis-ci.org/secondparty/dipper)
 
 Dipper is fast YAML parser that parses for the more commonly-used subset of YAML’s v1.0 and v1.2 official specifications. It is being made freely available for use in personal or commercial projects under the BSD 3-clause license.
 
