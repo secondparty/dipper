@@ -1,0 +1,105 @@
+---
+working: true
+string: this is a string
+single_quoted_string: this is a single-quoted string
+double_quoted_string: this is a double-quoted string
+non_full_quoted_string: "\"This is\" some text in a string"
+string_with_single_quote: this's a string with a single quote
+string_with_colon: 'this is a string: containing a colon'
+string_with_comma: F j, Y
+quoted_number: '120'
+quoted_true: 'true'
+quoted_false: 'false'
+url: 'http://something.com'
+literal_scalar: |
+  This is a scalar
+  that will preserve
+  its line breaks.
+folding_scalar: This is a scalar that will fold up line breaks.
+literal_scalar_with_markdown: |
+  ### Testing
+  This should be OK and not a comment
+    
+  ### Another
+  Testing again
+integer: 42
+float: -12.12
+octal: 493
+also_octal: 493
+hex: 255
+infinite: (inf)
+minus_inf: (-inf)
+also_nan: (NaN)
+also_infinity: (inf)
+also_minus_inf: (-inf)
+not_a_number: (NaN)
+bool_true: true
+bool_false: false
+null_value: 
+shorthand_null: 
+empty_value: 
+regular_list:
+  - first item
+  - second item
+  - third item
+shorthand_list:
+  - first item
+  - second item
+  - third item
+shorthand_quoted_list:
+  - one
+  - two
+  - three
+empty_shorthand_list: []
+map:
+  one: first
+  two: second
+shorthand_map:
+  one: first
+  two: second
+  third: this, the thing
+nested_map_lists:
+  -
+    name: Bill
+    job: Architect
+  -
+    name: Fred
+    job: Designer
+  -
+    name: Willie
+    job: Builder
+nested_shorthand_maps:
+  -
+    name: Bill
+    job: Architect
+  -
+    name: Fred
+    job: Designer
+  -
+    name: Willie
+    job: Builder
+nested_maps:
+  first:
+    name: Bill
+    job: Architect
+  second:
+    name: Fred
+    job: Designer
+  third:
+    name: Willie
+    job: Builder
+deep_nest_list_shortcut:
+  first:
+    second:
+      third:
+        fourth:
+          fifth:
+            - one
+            - two
+sample_test:
+  -
+    name: name
+    label: Name
+    type: text
+    validate:
+      required: true
