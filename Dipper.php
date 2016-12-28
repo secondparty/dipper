@@ -610,6 +610,7 @@ class Dipper
 	 */
 	private static function build($value, $depth=0)
 	{
+	  $value = self::prepareValue($value);
 		// what type of thing is $value?
 		if ($value === '' || is_null($value) || $value === 'null' || $value === '~') {
 			// this is empty or a null value!
@@ -626,6 +627,7 @@ class Dipper
 			if (array_keys($value) === range(0, count($value) - 1)) {
 				// this is a list!
 				foreach ($value as $subvalue) {
+				  $subvalue = self::prepareValue($subvalue);
 					$result = self::build($subvalue, $depth + 1);
 					if (is_array($subvalue)) {
 						$output[] = "-\n" . $result;
@@ -636,6 +638,7 @@ class Dipper
 			} else {
 				// this is a map!
 				foreach ($value as $key => $subvalue) {
+          $subvalue = self::prepareValue($subvalue);
 					$result = self::build($subvalue, $depth + 1);
 					if (is_array($subvalue) && count($subvalue)) {
 						$output[] = $key . ":\n" . $result;
@@ -733,4 +736,17 @@ class Dipper
 		// this is a small, no-quotes-needed string!
 		return trim($value);
 	}
+
+  /**
+   * Prepare value for serialization, cast stdClass to array.
+   *
+   * @param mixed $value
+   * @return mixed
+   */
+	private static function prepareValue($value) {
+	  if ($value instanceof \stdClass) {
+	    return (array)$value;
+    }
+    return $value;
+  }
 }
